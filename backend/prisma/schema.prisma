@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./data/crm.db"
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  name      String
+  industry  String?
+  website   String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  contacts Contact[]
+
+  @@map("accounts")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  accountId String   @map("account_id")
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  email     String?
+  phone     String?
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("contacts")
+}
