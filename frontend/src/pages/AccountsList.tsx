@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { Account, PaginatedResponse } from '../types';
 
@@ -8,18 +8,17 @@ export function AccountsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', industry: '', website: '', phone: '' });
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     loadAccounts();
-  }, [pagination.page]);
+  }, [pagination.page, searchQuery]);
 
   async function loadAccounts() {
     try {
       setLoading(true);
-      const response = await api.accounts.list(pagination.page, pagination.pageSize) as PaginatedResponse<Account>;
+      const response = await api.accounts.list(pagination.page, pagination.pageSize, searchQuery || undefined) as PaginatedResponse<Account>;
       setAccounts(response.items);
       setPagination(response.pagination);
       setError(null);
@@ -30,68 +29,90 @@ export function AccountsList() {
     }
   }
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      const account = await api.accounts.create({
-        name: formData.name,
-        industry: formData.industry || undefined,
-        website: formData.website || undefined,
-        phone: formData.phone || undefined,
-      }) as Account;
-      setShowCreateForm(false);
-      setFormData({ name: '', industry: '', website: '', phone: '' });
-      navigate(`/accounts/${account.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create account');
-    }
-  }
+  const startIndex = pagination.total > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
+  const endIndex = Math.min(pagination.page * pagination.pageSize, pagination.total);
 
   if (loading && accounts.length === 0) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        <h1>Accounts</h1>
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1>Accounts</h1>
-      {error && <div style={{ color: 'red' }}>Error: {error}</div>}
-      
-      <button onClick={() => setShowCreateForm(!showCreateForm)}>
-        {showCreateForm ? 'Cancel' : 'Create Account'}
-      </button>
+      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+        <Link to="/">Home</Link>
+      </div>
 
-      {showCreateForm && (
-        <form onSubmit={handleCreate}>
-          <div>
-            <label>Name: <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></label>
-          </div>
-          <div>
-            <label>Industry: <input value={formData.industry} onChange={(e) => setFormData({ ...formData, industry: e.target.value })} /></label>
-          </div>
-          <div>
-            <label>Website: <input value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} /></label>
-          </div>
-          <div>
-            <label>Phone: <input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></label>
-          </div>
-          <button type="submit">Create</button>
-        </form>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h1>Accounts</h1>
+        <button onClick={() => navigate('/accounts/new')}>Create Account</button>
+      </div>
+
+      {error && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>Error: {error}</div>}
+      
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="Search accounts..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPagination({ ...pagination, page: 1 });
+          }}
+        />
+      </div>
+
+      {pagination.total > 0 && (
+        <div style={{ marginBottom: '10px' }}>
+          Showing {startIndex}–{endIndex} of {pagination.total}
+        </div>
       )}
 
-      <div>
-        {accounts.map(account => (
-          <div key={account.id}>
-            <Link to={`/accounts/${account.id}`}>{account.name}</Link>
-            {account.industry && <span> - {account.industry}</span>}
-          </div>
-        ))}
-      </div>
+      {accounts.length === 0 && !loading ? (
+        <div style={{ padding: '40px', textAlign: 'center', border: '1px solid #ccc' }}>
+          <p>No accounts found.</p>
+          {!searchQuery && (
+            <button onClick={() => navigate('/accounts/new')}>Create Account</button>
+          )}
+        </div>
+      ) : accounts.length > 0 ? (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Name</th>
+              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Industry</th>
+              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Updated At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map(account => (
+              <tr
+                key={account.id}
+                onClick={() => navigate(`/accounts/${account.id}`)}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{account.name}</td>
+                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{account.industry || '—'}</td>
+                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{new Date(account.updatedAt).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
 
-      <div>
-        <button disabled={pagination.page === 1} onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}>Previous</button>
-        <span>Page {pagination.page} of {pagination.totalPages}</span>
-        <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}>Next</button>
-      </div>
+      {pagination.totalPages > 1 && (
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button disabled={pagination.page === 1} onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}>Previous</button>
+          <span>Page {pagination.page} of {pagination.totalPages}</span>
+          <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}>Next</button>
+        </div>
+      )}
     </div>
   );
 }

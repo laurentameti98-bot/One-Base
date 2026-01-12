@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { accountsRouter } from './api/accounts.js';
 import { contactsRouter } from './api/contacts.js';
+import { dealsRouter } from './api/deals.js';
 import { errorHandler } from './api/errorHandler.js';
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use('/api/accounts', accountsRouter);
 app.use('/api/contacts', contactsRouter);
+app.use('/api/deals', dealsRouter);
 
 app.use(errorHandler);
 

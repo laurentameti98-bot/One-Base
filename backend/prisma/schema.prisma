@@ -21,6 +21,7 @@ model Account {
   deletedAt DateTime? @map("deleted_at")
 
   contacts Contact[]
+  deals    Deal[]
 
   @@map("accounts")
 }
@@ -40,4 +41,20 @@ model Contact {
   account Account @relation(fields: [accountId], references: [id])
 
   @@map("contacts")
+}
+
+model Deal {
+  id        String    @id @default(uuid())
+  accountId String    @map("account_id")
+  name      String
+  stage     String
+  amount    Float?
+  closeDate DateTime? @map("close_date")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("deals")
 }

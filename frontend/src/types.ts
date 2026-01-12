@@ -8,6 +8,7 @@ export interface Account {
   updatedAt: string;
   deletedAt?: string | null;
   contacts?: Contact[];
+  deals?: Deal[];
 }
 
 export interface Contact {
@@ -18,6 +19,19 @@ export interface Contact {
   email?: string | null;
   phone?: string | null;
   title?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  account?: Account;
+}
+
+export interface Deal {
+  id: string;
+  accountId: string;
+  name: string;
+  stage: string;
+  amount?: number | null;
+  closeDate?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;

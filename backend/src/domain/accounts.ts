@@ -14,18 +14,27 @@ export const updateAccountSchema = createAccountSchema.partial();
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 
-export async function getAccounts(page: number = 1, pageSize: number = 20) {
+export async function getAccounts(page: number = 1, pageSize: number = 20, search?: string) {
   const skip = (page - 1) * pageSize;
+  
+  const whereClause: any = {
+    deletedAt: null,
+  };
+
+  if (search && search.trim()) {
+    // For SQLite, Prisma converts contains to LIKE '%value%'
+    whereClause.name = { contains: search.trim() };
+  }
   
   const [items, total] = await Promise.all([
     prisma.account.findMany({
-      where: { deletedAt: null },
+      where: whereClause,
       skip,
       take: pageSize,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.account.count({
-      where: { deletedAt: null },
+      where: whereClause,
     }),
   ]);
 
@@ -43,7 +52,10 @@ export async function getAccounts(page: number = 1, pageSize: number = 20) {
 export async function getAccountById(id: string) {
   const account = await prisma.account.findFirst({
     where: { id, deletedAt: null },
-    include: { contacts: { where: { deletedAt: null } } },
+    include: {
+      contacts: { where: { deletedAt: null } },
+      deals: { where: { deletedAt: null } },
+    },
   });
 
   if (!account) {

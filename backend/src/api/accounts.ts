@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { ZodError } from 'zod';
 import {
   getAccounts,
   getAccountById,
@@ -7,15 +6,15 @@ import {
   updateAccount,
   deleteAccount,
 } from '../domain/accounts.js';
-import { AppError } from './errorHandler.js';
 
 export const accountsRouter = Router();
 
 accountsRouter.get('/', async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const pageSize = parseInt(req.query.pageSize as string) || 20;
-    const result = await getAccounts(page, pageSize);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 20));
+    const search = req.query.q as string | undefined;
+    const result = await getAccounts(page, pageSize, search);
     res.json(result);
   } catch (error) {
     next(error);
@@ -36,11 +35,7 @@ accountsRouter.post('/', async (req, res, next) => {
     const account = await createAccount(req.body);
     res.status(201).json(account);
   } catch (error) {
-    if (error instanceof ZodError) {
-      next(new AppError(400, error.errors.map(e => e.message).join(', ')));
-    } else {
-      next(error);
-    }
+    next(error);
   }
 });
 
@@ -49,11 +44,7 @@ accountsRouter.put('/:id', async (req, res, next) => {
     const account = await updateAccount(req.params.id, req.body);
     res.json(account);
   } catch (error) {
-    if (error instanceof ZodError) {
-      next(new AppError(400, error.errors.map(e => e.message).join(', ')));
-    } else {
-      next(error);
-    }
+    next(error);
   }
 });
 

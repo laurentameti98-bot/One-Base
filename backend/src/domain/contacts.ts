@@ -16,19 +16,40 @@ export const updateContactSchema = createContactSchema.partial();
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 
-export async function getContacts(page: number = 1, pageSize: number = 20) {
+export async function getContacts(page: number = 1, pageSize: number = 20, search?: string) {
   const skip = (page - 1) * pageSize;
+  
+  const baseWhere: any = {
+    deletedAt: null,
+    account: {
+      deletedAt: null,
+    },
+  };
+
+  let whereClause = baseWhere;
+  
+  if (search && search.trim()) {
+    const searchTerm = search.trim();
+    whereClause = {
+      ...baseWhere,
+      OR: [
+        { firstName: { contains: searchTerm } },
+        { lastName: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+      ],
+    };
+  }
   
   const [items, total] = await Promise.all([
     prisma.contact.findMany({
-      where: { deletedAt: null },
+      where: whereClause,
       skip,
       take: pageSize,
       orderBy: { createdAt: 'desc' },
       include: { account: true },
     }),
     prisma.contact.count({
-      where: { deletedAt: null },
+      where: whereClause,
     }),
   ]);
 
@@ -45,7 +66,13 @@ export async function getContacts(page: number = 1, pageSize: number = 20) {
 
 export async function getContactById(id: string) {
   const contact = await prisma.contact.findFirst({
-    where: { id, deletedAt: null },
+    where: {
+      id,
+      deletedAt: null,
+      account: {
+        deletedAt: null,
+      },
+    },
     include: { account: true },
   });
 
