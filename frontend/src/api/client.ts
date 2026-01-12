@@ -78,4 +78,20 @@ export const api = {
       request(`/deals/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/deals/${id}`, { method: 'DELETE' }),
   },
+  activities: {
+    list: (page = 1, pageSize = 20, search?: string, accountId?: string, contactId?: string, dealId?: string, type?: string) => {
+      const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
+      if (search) params.append('q', search);
+      if (accountId) params.append('accountId', accountId);
+      if (contactId) params.append('contactId', contactId);
+      if (dealId) params.append('dealId', dealId);
+      if (type) params.append('type', type);
+      return request(`/activities?${params.toString()}`);
+    },
+    get: (id: string) => request(`/activities/${id}`),
+    create: (data: any) => request('/activities', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) =>
+      request(`/activities/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/activities/${id}`, { method: 'DELETE' }),
+  },
 };

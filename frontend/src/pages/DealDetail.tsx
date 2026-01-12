@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, ValidationError } from '../api/client';
-import { Deal, Account, PaginatedResponse } from '../types';
+import { Deal, Account, PaginatedResponse, Activity } from '../types';
 
 const DEAL_STAGES = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
 
@@ -21,6 +21,7 @@ export function DealDetail() {
     amount: '',
     closeDate: '',
   });
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -116,11 +117,10 @@ export function DealDetail() {
     return new Date(dateString).toLocaleDateString();
   }
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   if (!deal) {
+    if (loading) {
+      return null; // Skip full-page spinner per UX contract
+    }
     return <div>Deal not found</div>;
   }
 
@@ -180,6 +180,96 @@ export function DealDetail() {
               <dd style={{ margin: 0 }}>{new Date(deal.updatedAt).toLocaleString()}</dd>
             </dl>
           </section>
+
+          {(() => {
+            const activities = deal.activities || [];
+            const displayActivities = activities.slice(0, 5);
+            const hasMoreActivities = activities.length > 5;
+
+            function formatDate(dateString: string | null | undefined): string {
+              if (!dateString) return '—';
+              return new Date(dateString).toLocaleDateString();
+            }
+
+            function formatTimestamp(dateString: string): string {
+              return new Date(dateString).toLocaleString();
+            }
+
+            return (
+              <section style={{ marginBottom: '30px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h2 style={{ fontSize: '18px', margin: 0 }}>Activities Preview ({activities.length})</h2>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button onClick={() => navigate(`/activities/new?dealId=${deal.id}`)}>Create Activity</button>
+                    {hasMoreActivities && (
+                      <Link to={`/activities?dealId=${deal.id}`}>View all</Link>
+                    )}
+                  </div>
+                </div>
+                {activities.length > 0 ? (
+                  <div>
+                    {displayActivities.map((activity: Activity) => {
+                      const isExpanded = expandedActivityId === activity.id;
+                      return (
+                        <div key={activity.id} style={{ marginBottom: '10px', border: '1px solid #eee', padding: '10px' }}>
+                          <div
+                            onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}
+                            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '5px' }}>
+                                <span style={{ fontWeight: 'bold' }}>{activity.type}</span>
+                                <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                  {activity.subject}
+                                </Link>
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>
+                                {formatTimestamp(activity.createdAt)}
+                                {activity.contact && (
+                                  <> • <Link to={`/contacts/${activity.contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Contact: {activity.contact.firstName} {activity.contact.lastName}</Link></>
+                                )}
+                                {activity.account && !activity.contact && (
+                                  <> • <Link to={`/accounts/${activity.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Account: {activity.account.name}</Link></>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {isExpanded && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                              {activity.body && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Body:</strong>
+                                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px' }}>{activity.body}</div>
+                                </div>
+                              )}
+                              {activity.status && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Status:</strong> {activity.status}
+                                </div>
+                              )}
+                              {activity.dueDate && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Due Date:</strong> {formatDate(activity.dueDate)}
+                                </div>
+                              )}
+                              <div style={{ marginTop: '10px' }}>
+                                <Link to={`/activities/${activity.id}`}>View Details</Link>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ padding: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
+                    <p>No activities yet.</p>
+                    <button onClick={() => navigate(`/activities/new?dealId=${deal.id}`)} style={{ marginTop: '10px' }}>Log Activity</button>
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </div>
       ) : (
         <div>

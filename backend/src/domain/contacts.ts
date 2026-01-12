@@ -73,7 +73,10 @@ export async function getContactById(id: string) {
         deletedAt: null,
       },
     },
-    include: { account: true },
+    include: {
+      account: true,
+      activities: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
+    },
   });
 
   if (!contact) {
@@ -139,8 +142,25 @@ export async function deleteContact(id: string) {
     throw new AppError(404, 'Contact not found');
   }
 
-  return prisma.contact.update({
-    where: { id },
-    data: { deletedAt: new Date() },
+  const now = new Date();
+
+  // Use a transaction to cascade soft-delete related Activities
+  return prisma.$transaction(async (tx) => {
+    // Soft-delete the contact
+    await tx.contact.update({
+      where: { id },
+      data: { deletedAt: now },
+    });
+
+    // Soft-delete all related activities
+    await tx.activity.updateMany({
+      where: {
+        contactId: id,
+        deletedAt: null,
+      },
+      data: { deletedAt: now },
+    });
+
+    return { id, deletedAt: now };
   });
 }

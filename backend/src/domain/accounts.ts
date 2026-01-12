@@ -55,6 +55,7 @@ export async function getAccountById(id: string) {
     include: {
       contacts: { where: { deletedAt: null } },
       deals: { where: { deletedAt: null } },
+      activities: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
     },
   });
 
@@ -97,8 +98,43 @@ export async function deleteAccount(id: string) {
     throw new AppError(404, 'Account not found');
   }
 
-  return prisma.account.update({
-    where: { id },
-    data: { deletedAt: new Date() },
+  const now = new Date();
+
+  // Use a transaction to cascade soft-delete related Contacts, Deals, and Activities
+  return prisma.$transaction(async (tx) => {
+    // Soft-delete the account
+    await tx.account.update({
+      where: { id },
+      data: { deletedAt: now },
+    });
+
+    // Soft-delete all related contacts
+    await tx.contact.updateMany({
+      where: {
+        accountId: id,
+        deletedAt: null,
+      },
+      data: { deletedAt: now },
+    });
+
+    // Soft-delete all related deals
+    await tx.deal.updateMany({
+      where: {
+        accountId: id,
+        deletedAt: null,
+      },
+      data: { deletedAt: now },
+    });
+
+    // Soft-delete all related activities
+    await tx.activity.updateMany({
+      where: {
+        accountId: id,
+        deletedAt: null,
+      },
+      data: { deletedAt: now },
+    });
+
+    return { id, deletedAt: now };
   });
 }

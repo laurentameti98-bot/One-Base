@@ -9,6 +9,7 @@ export interface Account {
   deletedAt?: string | null;
   contacts?: Contact[];
   deals?: Deal[];
+  activities?: Activity[];
 }
 
 export interface Contact {
@@ -23,6 +24,7 @@ export interface Contact {
   updatedAt: string;
   deletedAt?: string | null;
   account?: Account;
+  activities?: Activity[];
 }
 
 export interface Deal {
@@ -36,6 +38,25 @@ export interface Deal {
   updatedAt: string;
   deletedAt?: string | null;
   account?: Account;
+  activities?: Activity[];
+}
+
+export interface Activity {
+  id: string;
+  type: string;
+  subject: string;
+  body?: string | null;
+  status?: string | null;
+  dueDate?: string | null;
+  accountId?: string | null;
+  contactId?: string | null;
+  dealId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  account?: Account | null;
+  contact?: Contact | null;
+  deal?: Deal | null;
 }
 
 export interface PaginatedResponse<T> {

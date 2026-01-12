@@ -18,9 +18,20 @@ export function DealsPipeline() {
   async function loadDeals() {
     try {
       setLoading(true);
-      // Load all deals for pipeline view
-      const response = await api.deals.list(1, 1000) as PaginatedResponse<Deal>;
-      setDeals(response.items);
+      // Load all deals for pipeline view using pagination loop
+      const allDeals: Deal[] = [];
+      let page = 1;
+      const pageSize = 100; // Backend max pageSize
+      let totalPages = 1;
+
+      do {
+        const response = await api.deals.list(page, pageSize) as PaginatedResponse<Deal>;
+        allDeals.push(...response.items);
+        totalPages = response.pagination.totalPages;
+        page++;
+      } while (page <= totalPages);
+
+      setDeals(allDeals);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load deals');

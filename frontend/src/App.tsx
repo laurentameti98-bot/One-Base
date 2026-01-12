@@ -9,12 +9,15 @@ import { DealsList } from './pages/DealsList';
 import { DealDetail } from './pages/DealDetail';
 import { DealCreate } from './pages/DealCreate';
 import { DealsPipeline } from './pages/DealsPipeline';
+import { ActivitiesList } from './pages/ActivitiesList';
+import { ActivityDetail } from './pages/ActivityDetail';
+import { ActivityCreate } from './pages/ActivityCreate';
 
 function App() {
   return (
     <div>
       <nav>
-        <Link to="/accounts">Accounts</Link> | <Link to="/contacts">Contacts</Link> | <Link to="/deals">Deals</Link>
+        <Link to="/accounts">Accounts</Link> | <Link to="/contacts">Contacts</Link> | <Link to="/deals">Deals</Link> | <Link to="/activities">Activities</Link>
       </nav>
       <Routes>
         <Route path="/accounts" element={<AccountsList />} />
@@ -27,6 +30,9 @@ function App() {
         <Route path="/deals/new" element={<DealCreate />} />
         <Route path="/deals/pipeline" element={<DealsPipeline />} />
         <Route path="/deals/:id" element={<DealDetail />} />
+        <Route path="/activities" element={<ActivitiesList />} />
+        <Route path="/activities/new" element={<ActivityCreate />} />
+        <Route path="/activities/:id" element={<ActivityDetail />} />
       </Routes>
     </div>
   );

@@ -85,7 +85,10 @@ export async function getDealById(id: string) {
         deletedAt: null,
       },
     },
-    include: { account: true },
+    include: {
+      account: true,
+      activities: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' } },
+    },
   });
 
   if (!deal) {
@@ -164,9 +167,26 @@ export async function deleteDeal(id: string) {
     throw new AppError(404, 'Deal not found');
   }
 
-  return prisma.deal.update({
-    where: { id },
-    data: { deletedAt: new Date() },
+  const now = new Date();
+
+  // Use a transaction to cascade soft-delete related Activities
+  return prisma.$transaction(async (tx) => {
+    // Soft-delete the deal
+    await tx.deal.update({
+      where: { id },
+      data: { deletedAt: now },
+    });
+
+    // Soft-delete all related activities
+    await tx.activity.updateMany({
+      where: {
+        dealId: id,
+        deletedAt: null,
+      },
+      data: { deletedAt: now },
+    });
+
+    return { id, deletedAt: now };
   });
 }
 

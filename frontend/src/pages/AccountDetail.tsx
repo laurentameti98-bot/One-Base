@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, ValidationError } from '../api/client';
-import { Account, Deal } from '../types';
+import { Account, Deal, Activity } from '../types';
 
 export function AccountDetail() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +12,7 @@ export function AccountDetail() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ name: '', industry: '', website: '', phone: '' });
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) loadAccount();
@@ -78,11 +79,10 @@ export function AccountDetail() {
     }
   }
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   if (!account) {
+    if (loading) {
+      return null; // Skip full-page spinner per UX contract
+    }
     return <div>Account not found</div>;
   }
 
@@ -139,7 +139,7 @@ export function AccountDetail() {
           {contacts.length > 0 && (
             <section style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h2 style={{ fontSize: '18px', margin: 0 }}>Contacts ({contacts.length})</h2>
+                <h2 style={{ fontSize: '18px', margin: 0 }}>Contacts Preview ({contacts.length})</h2>
                 {hasMoreContacts && (
                   <Link to={`/contacts?accountId=${account.id}`}>View all</Link>
                 )}
@@ -185,7 +185,7 @@ export function AccountDetail() {
             return (
               <section style={{ marginBottom: '30px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h2 style={{ fontSize: '18px', margin: 0 }}>Deals ({deals.length})</h2>
+                  <h2 style={{ fontSize: '18px', margin: 0 }}>Deals Preview ({deals.length})</h2>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <button onClick={() => navigate(`/deals/new?accountId=${account.id}`)}>Create Deal</button>
                     {hasMoreDeals && (
@@ -217,6 +217,96 @@ export function AccountDetail() {
                 ) : (
                   <div style={{ padding: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
                     <p>No deals yet.</p>
+                  </div>
+                )}
+              </section>
+            );
+          })()}
+
+          {(() => {
+            const activities = account.activities || [];
+            const displayActivities = activities.slice(0, 5);
+            const hasMoreActivities = activities.length > 5;
+
+            function formatDate(dateString: string | null | undefined): string {
+              if (!dateString) return '—';
+              return new Date(dateString).toLocaleDateString();
+            }
+
+            function formatTimestamp(dateString: string): string {
+              return new Date(dateString).toLocaleString();
+            }
+
+            return (
+              <section style={{ marginBottom: '30px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h2 style={{ fontSize: '18px', margin: 0 }}>Activities Preview ({activities.length})</h2>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button onClick={() => navigate(`/activities/new?accountId=${account.id}`)}>Create Activity</button>
+                    {hasMoreActivities && (
+                      <Link to={`/activities?accountId=${account.id}`}>View all</Link>
+                    )}
+                  </div>
+                </div>
+                {activities.length > 0 ? (
+                  <div>
+                    {displayActivities.map((activity: Activity) => {
+                      const isExpanded = expandedActivityId === activity.id;
+                      return (
+                        <div key={activity.id} style={{ marginBottom: '10px', border: '1px solid #eee', padding: '10px' }}>
+                          <div
+                            onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}
+                            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '5px' }}>
+                                <span style={{ fontWeight: 'bold' }}>{activity.type}</span>
+                                <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                  {activity.subject}
+                                </Link>
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>
+                                {formatTimestamp(activity.createdAt)}
+                                {activity.deal && (
+                                  <> • <Link to={`/deals/${activity.deal.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Deal: {activity.deal.name}</Link></>
+                                )}
+                                {activity.contact && !activity.deal && (
+                                  <> • <Link to={`/contacts/${activity.contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Contact: {activity.contact.firstName} {activity.contact.lastName}</Link></>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          {isExpanded && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                              {activity.body && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Body:</strong>
+                                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px' }}>{activity.body}</div>
+                                </div>
+                              )}
+                              {activity.status && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Status:</strong> {activity.status}
+                                </div>
+                              )}
+                              {activity.dueDate && (
+                                <div style={{ marginBottom: '10px' }}>
+                                  <strong>Due Date:</strong> {formatDate(activity.dueDate)}
+                                </div>
+                              )}
+                              <div style={{ marginTop: '10px' }}>
+                                <Link to={`/activities/${activity.id}`}>View Details</Link>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ padding: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
+                    <p>No activities yet.</p>
+                    <button onClick={() => navigate(`/activities/new?accountId=${account.id}`)} style={{ marginTop: '10px' }}>Log Activity</button>
                   </div>
                 )}
               </section>

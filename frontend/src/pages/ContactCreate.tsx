@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api, ValidationError } from '../api/client';
 import { Contact, Account, PaginatedResponse } from '../types';
 
 export function ContactCreate() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formData, setFormData] = useState({ accountId: '', firstName: '', lastName: '', email: '', phone: '', title: '' });
+  const [formData, setFormData] = useState({ accountId: searchParams.get('accountId') || '', firstName: '', lastName: '', email: '', phone: '', title: '' });
 
   useEffect(() => {
     loadAccounts();
