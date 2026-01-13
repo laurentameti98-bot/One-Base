@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>B2B CRM</title>
+    <style>
+      :root {
+        --color-bg-primary: #ffffff;
+        --color-bg-secondary: #fafbfc;
+        --color-bg-tertiary: #f5f6f8;
+        --color-bg-hover: #f8f9fb;
+        --color-border-light: #e8eaed;
+        --color-border-medium: #d1d5db;
+        --color-border-dark: #9ca3af;
+        --color-text-primary: #0f172a;
+        --color-text-secondary: #475569;
+        --color-text-tertiary: #64748b;
+        --color-text-placeholder: #94a3b8;
+        --color-primary: #6366f1;
+        --color-primary-hover: #4f46e5;
+        --color-error: #dc2626;
+        --color-error-bg: #fee2e2;
+        --color-error-border: #fecaca;
+        --color-success: #059669;
+        --color-success-bg: #d1fae5;
+        --color-success-border: #a7f3d0;
+        --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        --font-size-xs: 0.75rem;
+        --font-size-sm: 0.8125rem;
+        --font-size-base: 0.875rem;
+        --font-size-lg: 1rem;
+        --font-size-xl: 1.25rem;
+        --font-size-2xl: 1.625rem;
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+        --font-weight-bold: 700;
+        --line-height-tight: 1.3;
+        --line-height-normal: 1.5;
+        --line-height-relaxed: 1.6;
+        --space-xs: 0.25rem;
+        --space-sm: 0.5rem;
+        --space-md: 0.75rem;
+        --space-lg: 1rem;
+        --space-xl: 1.5rem;
+        --space-2xl: 2rem;
+        --space-3xl: 3rem;
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        --transition-base: 150ms ease;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-family);
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-normal);
+        color: var(--color-text-primary);
+        background: var(--color-bg-secondary);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .nav {
+        background: white;
+        border-bottom: 1px solid var(--color-border-light);
+        padding: var(--space-lg) var(--space-xl);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+      }
+
+      .nav-tabs {
+        display: flex;
+        gap: var(--space-sm);
+        max-width: 1400px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+      }
+
+      .nav-tab {
+        padding: var(--space-sm) var(--space-lg);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-secondary);
+        background: transparent;
+        border: 1px solid var(--color-border-medium);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+
+      .nav-tab:hover {
+        background: var(--color-bg-hover);
+        color: var(--color-text-primary);
+      }
+
+      .nav-tab.active {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+
+      .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--space-xl);
+      }
+
+      .screen {
+        display: none;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-sm);
+        padding: var(--space-sm) var(--space-lg);
+        font-family: var(--font-family);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--line-height-tight);
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        white-space: nowrap;
+      }
+
+      .btn:focus {
+        outline: none;
+        box-shadow: var(--shadow-focus);
+      }
+
+      .btn-primary {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+
+      .btn-primary:hover {
+        background: var(--color-primary-hover);
+      }
+
+      .btn-secondary {
+        background: white;
+        color: var(--color-text-primary);
+        border-color: var(--color-border-medium);
+      }
+
+      .btn-secondary:hover {
+        background: var(--color-bg-hover);
+        border-color: var(--color-border-dark);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--color-text-secondary);
+      }
+
+      .btn-ghost:hover {
+        background: var(--color-bg-hover);
+      }
+
+      .btn-destructive {
+        background: white;
+        color: var(--color-error);
+        border-color: var(--color-border-medium);
+      }
+
+      .btn-destructive:hover {
+        background: var(--color-error-bg);
+        border-color: var(--color-error-border);
+      }
+
+      .btn-sm {
+        padding: var(--space-xs) var(--space-md);
+        font-size: var(--font-size-sm);
+      }
+
+      .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-tertiary);
+      }
+
+      .breadcrumb a {
+        color: var(--color-text-tertiary);
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        color: var(--color-text-primary);
+        text-decoration: underline;
+      }
+
+      .breadcrumb-current {
+        color: var(--color-text-primary);
+      }
+
+      .page-header {
+        margin-bottom: var(--space-2xl);
+        background: white;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        padding: var(--space-xl);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .page-header-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-xl);
+      }
+
+      .page-header-title-section {
+        flex: 1;
+      }
+
+      .page-title {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--space-xs);
+        line-height: var(--line-height-tight);
+        letter-spacing: -0.02em;
+      }
+
+      .page-subtitle {
+        font-size: var(--font-size-base);
+        color: var(--color-text-secondary);
+        margin-bottom: var(--space-sm);
+      }
+
+      .page-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--space-lg);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-tertiary);
+      }
+
+      .page-actions {
+        display: flex;
+        gap: var(--space-sm);
+      }
+
+      .content-section {
+        background: white;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-xl);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-lg) var(--space-xl);
+        border-bottom: 1px solid var(--color-border-light);
+      }
+
+      .section-title {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-bold);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-tertiary);
+      }
+
+      .section-action {
+        font-size: var(--font-size-sm);
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+
+      .section-action:hover {
+        text-decoration: underline;
+      }
+
+      .section-body {
+        padding: var(--space-xl);
+      }
+
+      .section-body-compact {
+        padding: 0;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--font-size-base);
+      }
+
+      .table thead {
+        background: var(--color-bg-secondary);
+      }
+
+      .table th {
+        padding: var(--space-md) var(--space-lg);
+        text-align: left;
+        font-weight: var(--font-weight-semibold);
+        white-space: nowrap;
+      }
+
+      .table td {
+        padding: var(--space-md) var(--space-lg);
+        border-top: 1px solid var(--color-border-light);
+      }
+
+      .table tbody tr {
+        transition: background var(--transition-base);
+      }
+
+      .table tbody tr:hover {
+        background: var(--color-bg-hover);
+        cursor: pointer;
+      }
+
+      .table td a {
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+
+      .table td a:hover {
+        text-decoration: underline;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-xs) var(--space-sm);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        line-height: 1;
+        border-radius: var(--radius-sm);
+        background: var(--color-bg-tertiary);
+        color: var(--color-text-secondary);
+        border: 1px solid var(--color-border-medium);
+      }
+
+      .badge-primary {
+        background: #eef2ff;
+        color: #4f46e5;
+        border-color: #e0e7ff;
+      }
+
+      .badge-success {
+        background: var(--color-success-bg);
+        color: #047857;
+        border-color: var(--color-success-border);
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr 140px 1fr;
+        gap: var(--space-md) var(--space-xl);
+        padding: var(--space-lg);
+      }
+
+      .field-row {
+        display: contents;
+      }
+
+      .field-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-secondary);
+        padding: var(--space-xs) 0;
+      }
+
+      .field-value {
+        font-size: var(--font-size-base);
+        color: var(--color-text-primary);
+        padding: var(--space-xs) 0;
+      }
+
+      .field-value a {
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+
+      .field-value a:hover {
+        text-decoration: underline;
+      }
+
+      .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+      }
+
+      .timeline-entry {
+        padding: var(--space-lg);
+        background: white;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+
+      .timeline-entry:hover {
+        border-color: var(--color-border-medium);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+
+      .timeline-entry-header {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-md);
+      }
+
+      .timeline-entry-type {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-xs) var(--space-sm);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-bold);
+        text-transform: uppercase;
+        background: linear-gradient(
+          135deg,
+          var(--color-bg-tertiary) 0%,
+          var(--color-bg-secondary) 100%
+        );
+        color: var(--color-text-secondary);
+        border-radius: var(--radius-md);
+        min-width: 60px;
+        justify-content: center;
+        letter-spacing: 0.03em;
+      }
+
+      .timeline-entry-content {
+        flex: 1;
+      }
+
+      .timeline-entry-title {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        margin-bottom: var(--space-xs);
+      }
+
+      .timeline-entry-meta {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-tertiary);
+      }
+
+      .timeline-entry-details {
+        margin-top: var(--space-md);
+        padding-top: var(--space-md);
+        border-top: 1px solid var(--color-border-light);
+        display: none;
+      }
+
+      .timeline-entry-details.expanded {
+        display: block;
+      }
+
+      .timeline-entry-details-row {
+        display: flex;
+        gap: var(--space-xl);
+        margin-bottom: var(--space-sm);
+        font-size: var(--font-size-sm);
+      }
+
+      .timeline-entry-details-label {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-secondary);
+        min-width: 100px;
+      }
+
+      .timeline-entry-notes {
+        margin-top: var(--space-md);
+        padding: var(--space-md);
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+        line-height: var(--line-height-relaxed);
+      }
+
+      .timeline-entry-actions {
+        display: flex;
+        gap: var(--space-md);
+        margin-top: var(--space-md);
+      }
+
+      .pipeline-container {
+        display: flex;
+        gap: var(--space-lg);
+        overflow-x: auto;
+        padding-bottom: var(--space-lg);
+      }
+
+      .pipeline-column {
+        flex: 0 0 280px;
+        display: flex;
+        flex-direction: column;
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--color-border-light);
+      }
+
+      .pipeline-column-header {
+        padding: var(--space-md) var(--space-lg);
+        border-bottom: 1px solid var(--color-border-medium);
+      }
+
+      .pipeline-column-title {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        margin-bottom: var(--space-xs);
+      }
+
+      .pipeline-column-stats {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-tertiary);
+      }
+
+      .pipeline-column-body {
+        padding: var(--space-md);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+        flex: 1;
+      }
+
+      .deal-card {
+        padding: var(--space-lg);
+        background: white;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+
+      .deal-card:hover {
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+      }
+
+      .deal-card-title {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-medium);
+        margin-bottom: var(--space-xs);
+      }
+
+      .deal-card-account {
+        font-size: var(--font-size-sm);
+        color: var(--color-primary);
+        margin-bottom: var(--space-sm);
+      }
+
+      .deal-card-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+      }
+
+      .search-bar {
+        display: flex;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+      }
+
+      .search-input {
+        flex: 1;
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-base);
+        border: 1px solid var(--color-border-medium);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-base);
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-focus);
+      }
+
+      .form-select {
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--font-size-base);
+        border: 1px solid var(--color-border-medium);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-base);
+      }
+
+      .form-select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-focus);
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-lg);
+        margin-bottom: var(--space-xl);
+      }
+
+      .kpi-card {
+        background: white;
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        padding: var(--space-xl);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .kpi-label {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--space-sm);
+      }
+
+      .kpi-value {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+        line-height: 1;
+      }
+
+      .kpi-subtext {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-tertiary);
+        margin-top: var(--space-sm);
+      }
+
+      .quick-actions {
+        display: flex;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+      }
+
+      .notes-section {
+        padding: var(--space-xl);
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-relaxed);
+        color: var(--color-text-primary);
+      }
+
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-lg);
+        border-top: 1px solid var(--color-border-light);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+      }
+
+      .pagination-info {
+        flex: 1;
+      }
+
+      .pagination-controls {
+        display: flex;
+        gap: var(--space-sm);
+        align-items: center;
+      }
+
+      .pagination-btn {
+        padding: var(--space-xs) var(--space-md);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-primary);
+        background: white;
+        border: 1px solid var(--color-border-medium);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all var(--transition-base);
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        background: var(--color-bg-hover);
+        border-color: var(--color-border-dark);
+      }
+
+      .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .pagination-btn.active {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+
+      .text-center {
+        text-align: center;
+      }
+
+      .mt-xl {
+        margin-top: var(--space-xl);
+      }
+
+      .select-200 {
+        width: 200px;
+      }
+
+      .select-150 {
+        width: 150px;
+      }
+
+      .page-meta--stacked {
+        margin-top: var(--space-xs);
+      }
+
+      .pagination-ellipsis {
+        padding: 0 var(--space-sm);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <div class="nav-tabs">
+        <button class="nav-tab" data-screen="home">Home</button>
+        <button class="nav-tab" data-screen="accounts-list">Accounts</button>
+        <button class="nav-tab" data-screen="account-detail">Account Detail</button>
+        <button class="nav-tab" data-screen="contacts-list">Contacts</button>
+        <button class="nav-tab" data-screen="contact-detail">Contact Detail</button>
+        <button class="nav-tab" data-screen="deals-list">Deals</button>
+        <button class="nav-tab" data-screen="deal-detail">Deal Detail</button>
+        <button class="nav-tab" data-screen="pipeline">Pipeline</button>
+        <button class="nav-tab" data-screen="activities">Activities</button>
+        <button class="nav-tab" data-screen="activity-detail">
+          Activity Detail
+        </button>
+      </div>
+    </div>
+
+    <div id="home" class="screen">
+      <div class="page-container">
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Home</h1>
+              <div class="page-meta">
+                <span>Welcome back, John Smith</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Open Deals</div>
+            <div class="kpi-value">23</div>
+            <div class="kpi-subtext">5 closing this week</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Activities This Week</div>
+            <div class="kpi-value">47</div>
+            <div class="kpi-subtext">8 scheduled today</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Accounts</div>
+            <div class="kpi-value">147</div>
+            <div class="kpi-subtext">12 added this month</div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Quick Actions</h2>
+          </div>
+          <div class="section-body">
+            <div class="quick-actions">
+              <button class="btn btn-primary">Create Account</button>
+              <button class="btn btn-primary">Create Contact</button>
+              <button class="btn btn-primary">Create Deal</button>
+              <button class="btn btn-secondary">Log Activity</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Recent Activities</h2>
+            <a href="#" class="section-action">View all</a>
+          </div>
+          <div class="section-body">
+            <div class="timeline">
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">
+                      Follow-up call with decision maker
+                    </div>
+                    <div class="timeline-entry-meta">2 hours ago | Acme Corp</div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Meeting</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">
+                      Product demo with Beta Inc
+                    </div>
+                    <div class="timeline-entry-meta">
+                      Today at 10:00 AM | Beta Inc
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Email</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Sent proposal to Gamma LLC</div>
+                    <div class="timeline-entry-meta">
+                      Yesterday at 4:30 PM | Gamma LLC
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="accounts-list" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-current">Accounts</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Accounts</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary">Create Account</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <input type="text" class="search-input" placeholder="Search accounts..." />
+          <select class="form-select select-200">
+            <option>All Industries</option>
+            <option>Technology</option>
+            <option>Finance</option>
+            <option>Healthcare</option>
+          </select>
+        </div>
+
+        <div class="content-section">
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name ▲</th>
+                    <th>Industry</th>
+                    <th>Website</th>
+                    <th>Phone</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Acme Corporation</a></td>
+                    <td>Technology</td>
+                    <td><a href="#">acme.com</a></td>
+                    <td>+1-555-0100</td>
+                    <td>Jan 10, 2026</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm">⋯</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Beta Inc</a></td>
+                    <td>Manufacturing</td>
+                    <td><a href="#">beta.com</a></td>
+                    <td>+1-555-0200</td>
+                    <td>Jan 10, 2026</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm">⋯</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Gamma LLC</a></td>
+                    <td>Finance</td>
+                    <td><a href="#">gamma.com</a></td>
+                    <td>+1-555-0300</td>
+                    <td>Jan 9, 2026</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm">⋯</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Delta Systems</a></td>
+                    <td>Healthcare</td>
+                    <td><a href="#">delta.com</a></td>
+                    <td>+1-555-0400</td>
+                    <td>Jan 8, 2026</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm">⋯</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Epsilon Corp</a></td>
+                    <td>Technology</td>
+                    <td><a href="#">epsilon.com</a></td>
+                    <td>+1-555-0500</td>
+                    <td>Jan 7, 2026</td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm">⋯</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="pagination">
+                <div class="pagination-info">Showing 1-5 of 147</div>
+                <div class="pagination-controls">
+                  <button class="pagination-btn" disabled>Previous</button>
+                  <button class="pagination-btn active">1</button>
+                  <button class="pagination-btn">2</button>
+                  <button class="pagination-btn">3</button>
+                  <span class="pagination-ellipsis">...</span>
+                  <button class="pagination-btn">30</button>
+                  <button class="pagination-btn">Next</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="account-detail" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <a href="#">Accounts</a>
+          <span>›</span>
+          <span class="breadcrumb-current">Acme Corporation</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Acme Corporation</h1>
+              <div class="page-subtitle">Customer</div>
+              <div class="page-meta">
+                <span>Owner: John Smith</span>
+                <span>|</span>
+                <span>Last Updated: Jan 10, 2026</span>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-secondary">Edit Account</button>
+              <button class="btn btn-primary">Create Deal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Account Details</h2>
+          </div>
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-row">
+                <div class="field-label">Company Name:</div>
+                <div class="field-value">Acme Corporation</div>
+                <div class="field-label">Industry:</div>
+                <div class="field-value">Technology</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Website:</div>
+                <div class="field-value"><a href="#">acme.com</a></div>
+                <div class="field-label">Phone:</div>
+                <div class="field-value">+1-555-0100</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Email:</div>
+                <div class="field-value"><a href="#">contact@acme.com</a></div>
+                <div class="field-label">Address:</div>
+                <div class="field-value">
+                  123 Market St<br />
+                  San Francisco, CA
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Key Contacts</h2>
+            <a href="#" class="section-action">View all</a>
+          </div>
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Title</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Primary</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Jane Doe</a></td>
+                    <td>CEO</td>
+                    <td><a href="#">jane@acme.com</a></td>
+                    <td>555-0101</td>
+                    <td><span class="badge badge-primary">Yes</span></td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Bob Smith</a></td>
+                    <td>VP Sales</td>
+                    <td><a href="#">bob@acme.com</a></td>
+                    <td>555-0102</td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Alice Johnson</a></td>
+                    <td>CTO</td>
+                    <td><a href="#">alice@acme.com</a></td>
+                    <td>555-0103</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Recent Activities</h2>
+            <a href="#" class="section-action">View all</a>
+          </div>
+          <div class="section-body">
+            <div class="timeline">
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">
+                      Follow-up call with Jane Doe
+                    </div>
+                    <div class="timeline-entry-meta">
+                      2 hours ago | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Meeting</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">
+                      Quarterly business review
+                    </div>
+                    <div class="timeline-entry-meta">
+                      Jan 10, 2026 at 2:00 PM | With Bob Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Email</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Sent proposal document</div>
+                    <div class="timeline-entry-meta">
+                      Jan 9, 2026 at 4:30 PM | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="contacts-list" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-current">Contacts</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Contacts</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary">Create Contact</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <input type="text" class="search-input" placeholder="Search contacts..." />
+          <select class="form-select select-200">
+            <option>All Accounts</option>
+            <option>Acme Corp</option>
+            <option>Beta Inc</option>
+          </select>
+        </div>
+
+        <div class="content-section">
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name ▲</th>
+                    <th>Account</th>
+                    <th>Title</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Last Contacted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Jane Doe</a></td>
+                    <td><a href="#">Acme Corp</a></td>
+                    <td>CEO</td>
+                    <td><a href="#">jane@acme.com</a></td>
+                    <td>555-0101</td>
+                    <td>Jan 10, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Bob Smith</a></td>
+                    <td><a href="#">Acme Corp</a></td>
+                    <td>VP Sales</td>
+                    <td><a href="#">bob@acme.com</a></td>
+                    <td>555-0102</td>
+                    <td>Jan 9, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Alice Johnson</a></td>
+                    <td><a href="#">Acme Corp</a></td>
+                    <td>CTO</td>
+                    <td><a href="#">alice@acme.com</a></td>
+                    <td>555-0103</td>
+                    <td>Jan 8, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Mike Wilson</a></td>
+                    <td><a href="#">Beta Inc</a></td>
+                    <td>Director of Operations</td>
+                    <td><a href="#">mike@beta.com</a></td>
+                    <td>555-0201</td>
+                    <td>Jan 10, 2026</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Sarah Connor</a></td>
+                    <td><a href="#">Gamma LLC</a></td>
+                    <td>CFO</td>
+                    <td><a href="#">sarah@gamma.com</a></td>
+                    <td>555-0301</td>
+                    <td>Jan 9, 2026</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="pagination">
+                <div class="pagination-info">Showing 1-5 of 87</div>
+                <div class="pagination-controls">
+                  <button class="pagination-btn" disabled>Previous</button>
+                  <button class="pagination-btn active">1</button>
+                  <button class="pagination-btn">2</button>
+                  <button class="pagination-btn">3</button>
+                  <span class="pagination-ellipsis">...</span>
+                  <button class="pagination-btn">18</button>
+                  <button class="pagination-btn">Next</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="contact-detail" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <a href="#">Accounts</a>
+          <span>›</span>
+          <a href="#">Acme Corporation</a>
+          <span>›</span>
+          <a href="#">Contacts</a>
+          <span>›</span>
+          <span class="breadcrumb-current">Jane Doe</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Jane Doe</h1>
+              <div class="page-subtitle">
+                CEO at <a href="#">Acme Corporation</a>
+              </div>
+              <div class="page-meta">
+                <span><span class="badge badge-primary">Primary Contact</span></span>
+                <span>|</span>
+                <span>Last Contacted: Jan 10, 2026</span>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-destructive">Delete Contact</button>
+              <button class="btn btn-primary">Edit Contact</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Contact Details</h2>
+          </div>
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-row">
+                <div class="field-label">Full Name:</div>
+                <div class="field-value">Jane Doe</div>
+                <div class="field-label">Title:</div>
+                <div class="field-value">CEO</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Account:</div>
+                <div class="field-value">
+                  <a href="#">Acme Corporation</a>
+                </div>
+                <div class="field-label">Email:</div>
+                <div class="field-value">
+                  <a href="mailto:jane@acme.com">jane@acme.com</a>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Phone:</div>
+                <div class="field-value">+1-555-0101</div>
+                <div class="field-label">Mobile:</div>
+                <div class="field-value">+1-555-0199</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Primary Contact:</div>
+                <div class="field-value">
+                  <span class="badge badge-primary">Yes</span>
+                </div>
+                <div class="field-label">Last Contacted:</div>
+                <div class="field-value">Jan 10, 2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Related Deals</h2>
+            <a href="#" class="section-action">View all</a>
+          </div>
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Deal Name</th>
+                    <th>Stage</th>
+                    <th>Value</th>
+                    <th>Close Date</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Q1 Enterprise Deal</a></td>
+                    <td><span class="badge">Negotiation</span></td>
+                    <td>$50,000</td>
+                    <td>Jan 31, 2026</td>
+                    <td><span class="badge">Champion</span></td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Platform Upsell</a></td>
+                    <td><span class="badge">Proposal</span></td>
+                    <td>$25,000</td>
+                    <td>Feb 15, 2026</td>
+                    <td><span class="badge">Decision Maker</span></td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">New Licensing</a></td>
+                    <td><span class="badge">Qualification</span></td>
+                    <td>$100,000</td>
+                    <td>Mar 30, 2026</td>
+                    <td><span class="badge">Champion</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Recent Activities</h2>
+            <a href="#" class="section-action">View all</a>
+          </div>
+          <div class="section-body">
+            <div class="timeline">
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Pricing negotiation call</div>
+                    <div class="timeline-entry-meta">
+                      Jan 10, 2026 at 2:30 PM | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Email</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Sent proposal document</div>
+                    <div class="timeline-entry-meta">
+                      Jan 9, 2026 at 4:30 PM | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Meeting</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Quarterly business review</div>
+                    <div class="timeline-entry-meta">
+                      Jan 10, 2026 at 2:00 PM | With Bob Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-xl text-center">
+              <button class="btn btn-secondary">Log Activity</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="deals-list" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-current">Deals</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Deals</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-secondary">Pipeline View</button>
+              <button class="btn btn-primary">Create Deal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <input type="text" class="search-input" placeholder="Search deals..." />
+          <select class="form-select select-200">
+            <option>All Stages</option>
+            <option>Prospecting</option>
+            <option>Negotiation</option>
+          </select>
+        </div>
+
+        <div class="content-section">
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name ▲</th>
+                    <th>Account</th>
+                    <th>Stage</th>
+                    <th>Value</th>
+                    <th>Close Date</th>
+                    <th>Owner</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Q1 Enterprise Deal</a></td>
+                    <td><a href="#">Acme Corp</a></td>
+                    <td><span class="badge">Negotiation</span></td>
+                    <td>$50,000</td>
+                    <td>Jan 31, 2026</td>
+                    <td>J. Smith</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Platform Upsell</a></td>
+                    <td><a href="#">Acme Corp</a></td>
+                    <td><span class="badge">Proposal</span></td>
+                    <td>$25,000</td>
+                    <td>Feb 15, 2026</td>
+                    <td>J. Smith</td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Cloud Migration</a></td>
+                    <td><a href="#">Gamma LLC</a></td>
+                    <td><span class="badge badge-success">Closed Won</span></td>
+                    <td>$75,000</td>
+                    <td>Jan 5, 2026</td>
+                    <td>K. Davis</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="deal-detail" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <a href="#">Deals</a>
+          <span>›</span>
+          <span class="breadcrumb-current">Q1 Enterprise Deal</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Q1 Enterprise Deal</h1>
+              <div class="page-meta">
+                <a href="#">Acme Corporation</a>
+                <span>|</span>
+                <span class="badge">Negotiation</span>
+                <span>|</span>
+                <span>Owner: John Smith</span>
+              </div>
+              <div class="page-meta page-meta--stacked">
+                <span>Last Updated: Jan 10, 2026</span>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-destructive">Delete Deal</button>
+              <button class="btn btn-secondary">Mark as Closed Won</button>
+              <button class="btn btn-primary">Edit Deal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Deal Details</h2>
+          </div>
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-row">
+                <div class="field-label">Deal Name:</div>
+                <div class="field-value">Q1 Enterprise Deal</div>
+                <div class="field-label">Stage:</div>
+                <div class="field-value"><span class="badge">Negotiation</span></div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Account:</div>
+                <div class="field-value"><a href="#">Acme Corporation</a></div>
+                <div class="field-label">Value:</div>
+                <div class="field-value">$50,000</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Close Date:</div>
+                <div class="field-value">Jan 31, 2026</div>
+                <div class="field-label">Owner:</div>
+                <div class="field-value">John Smith</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Deal Type:</div>
+                <div class="field-value">New Business</div>
+                <div class="field-label"></div>
+                <div class="field-value"></div>
+              </div>
+            </div>
+
+            <div class="mt-xl">
+              <div class="field-label">Description:</div>
+              <div class="field-value">
+                Large enterprise deal for annual platform subscription with custom
+                implementation services. Includes onboarding and training for up to
+                100 users.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Related Contacts</h2>
+          </div>
+          <div class="section-body section-body-compact">
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Title</th>
+                    <th>Email</th>
+                    <th>Role in Deal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="#">Jane Doe</a></td>
+                    <td>CEO</td>
+                    <td><a href="#">jane@acme.com</a></td>
+                    <td><span class="badge">Champion</span></td>
+                  </tr>
+                  <tr>
+                    <td><a href="#">Bob Smith</a></td>
+                    <td>VP Sales</td>
+                    <td><a href="#">bob@acme.com</a></td>
+                    <td><span class="badge">Decision Maker</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Deal Activities</h2>
+            <select class="form-select select-150">
+              <option>All Activities</option>
+              <option>Calls</option>
+              <option>Meetings</option>
+            </select>
+          </div>
+          <div class="section-body">
+            <div class="timeline">
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Final pricing discussion</div>
+                    <div class="timeline-entry-meta">
+                      3 hours ago | Logged by John Smith | With: Jane Doe
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Meeting</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Contract review session</div>
+                    <div class="timeline-entry-meta">
+                      Jan 9, 2026 at 3:00 PM | With: Bob Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-entry">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Email</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Sent updated proposal</div>
+                    <div class="timeline-entry-meta">
+                      Jan 8, 2026 at 11:00 AM | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-xl text-center">
+              <button class="btn btn-secondary">Log Activity</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pipeline" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <span class="breadcrumb-current">Deals</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Deals</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-secondary">List View</button>
+              <button class="btn btn-primary">Create Deal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <select class="form-select select-200">
+            <option>All Owners</option>
+            <option>My Deals</option>
+          </select>
+          <select class="form-select select-200">
+            <option>All Time</option>
+            <option>This Quarter</option>
+          </select>
+        </div>
+
+        <div class="pipeline-container">
+          <div class="pipeline-column">
+            <div class="pipeline-column-header">
+              <div class="pipeline-column-title">Prospecting</div>
+              <div class="pipeline-column-stats">2 deals · $80,000</div>
+            </div>
+            <div class="pipeline-column-body">
+              <div class="deal-card">
+                <div class="deal-card-title">Q1 Enterprise Deal</div>
+                <div class="deal-card-account">Acme Corp</div>
+                <div class="deal-card-meta">
+                  <span>$50,000</span>
+                  <span>Jan 31</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">Mobile App</div>
+                <div class="deal-card-account">Epsilon Inc</div>
+                <div class="deal-card-meta">
+                  <span>$30,000</span>
+                  <span>Feb 28</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pipeline-column">
+            <div class="pipeline-column-header">
+              <div class="pipeline-column-title">Qualification</div>
+              <div class="pipeline-column-stats">3 deals · $130,000</div>
+            </div>
+            <div class="pipeline-column-body">
+              <div class="deal-card">
+                <div class="deal-card-title">Platform Upsell</div>
+                <div class="deal-card-account">Acme Corp</div>
+                <div class="deal-card-meta">
+                  <span>$25,000</span>
+                  <span>Feb 15</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">CRM Implementation</div>
+                <div class="deal-card-account">Zeta Corp</div>
+                <div class="deal-card-meta">
+                  <span>$60,000</span>
+                  <span>Mar 15</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">Data Warehouse</div>
+                <div class="deal-card-account">Nu Corp</div>
+                <div class="deal-card-meta">
+                  <span>$45,000</span>
+                  <span>Apr 30</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pipeline-column">
+            <div class="pipeline-column-header">
+              <div class="pipeline-column-title">Proposal</div>
+              <div class="pipeline-column-stats">2 deals · $180,000</div>
+            </div>
+            <div class="pipeline-column-body">
+              <div class="deal-card">
+                <div class="deal-card-title">New Licensing</div>
+                <div class="deal-card-account">Acme Corp</div>
+                <div class="deal-card-meta">
+                  <span>$100,000</span>
+                  <span>Mar 30</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">API Partnership</div>
+                <div class="deal-card-account">Theta Systems</div>
+                <div class="deal-card-meta">
+                  <span>$80,000</span>
+                  <span>Apr 1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pipeline-column">
+            <div class="pipeline-column-header">
+              <div class="pipeline-column-title">Negotiation</div>
+              <div class="pipeline-column-stats">2 deals · $25,000</div>
+            </div>
+            <div class="pipeline-column-body">
+              <div class="deal-card">
+                <div class="deal-card-title">Website Redesign</div>
+                <div class="deal-card-account">Beta Inc</div>
+                <div class="deal-card-meta">
+                  <span>$15,000</span>
+                  <span>Apr 15</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">Training Package</div>
+                <div class="deal-card-account">Iota Corp</div>
+                <div class="deal-card-meta">
+                  <span>$10,000</span>
+                  <span>Feb 10</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pipeline-column">
+            <div class="pipeline-column-header">
+              <div class="pipeline-column-title">Closed Won</div>
+              <div class="pipeline-column-stats">2 deals · $200,000</div>
+            </div>
+            <div class="pipeline-column-body">
+              <div class="deal-card">
+                <div class="deal-card-title">Cloud Migration</div>
+                <div class="deal-card-account">Gamma LLC</div>
+                <div class="deal-card-meta">
+                  <span>$75,000</span>
+                  <span>Jan 5</span>
+                </div>
+              </div>
+              <div class="deal-card">
+                <div class="deal-card-title">Support Renewal</div>
+                <div class="deal-card-account">Kappa Inc</div>
+                <div class="deal-card-meta">
+                  <span>$125,000</span>
+                  <span>Jan 15</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="activities" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <a href="#">Accounts</a>
+          <span>›</span>
+          <a href="#">Acme Corporation</a>
+          <span>›</span>
+          <span class="breadcrumb-current">Activities</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">Activities</h1>
+              <div class="page-subtitle">Acme Corporation</div>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary">Log Activity</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <select class="form-select select-200">
+            <option>All Activities</option>
+            <option>Calls</option>
+            <option>Meetings</option>
+            <option>Emails</option>
+            <option>Tasks</option>
+          </select>
+        </div>
+
+        <div class="content-section">
+          <div class="section-body">
+            <div class="timeline">
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">
+                      Follow-up call with decision maker
+                    </div>
+                    <div class="timeline-entry-meta">
+                      2 hours ago | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Pricing negotiation call</div>
+                    <div class="timeline-entry-meta">
+                      Jan 10, 2026 at 2:30 PM | Logged by John Smith
+                    </div>
+                  </div>
+                </div>
+                <div class="timeline-entry-details">
+                  <div class="timeline-entry-details-row">
+                    <span class="timeline-entry-details-label">Duration:</span>
+                    <span>30 minutes</span>
+                  </div>
+                  <div class="timeline-entry-details-row">
+                    <span class="timeline-entry-details-label">Related to:</span>
+                    <span><a href="#">Q1 Enterprise Deal</a></span>
+                  </div>
+                  <div class="timeline-entry-details-row">
+                    <span class="timeline-entry-details-label">With:</span>
+                    <span><a href="#">Jane Doe</a> (Acme Corporation)</span>
+                  </div>
+                  <div class="timeline-entry-notes">
+                    Discussed final pricing and implementation timeline. Jane
+                    confirmed budget approval and is ready to move forward pending
+                    legal review. She mentioned they need to start by end of month
+                    to meet their Q1 internal deadline. Action items: send updated
+                    SOW to legal team, coordinate with implementation team for
+                    kickoff date.
+                  </div>
+                  <div class="timeline-entry-actions">
+                    <button class="btn btn-secondary btn-sm">Edit Activity</button>
+                    <button class="btn btn-ghost btn-sm">Delete</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Meeting</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Quarterly business review</div>
+                    <div class="timeline-entry-meta">
+                      Jan 10, 2026 at 2:00 PM | With: Bob Smith
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Email</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Sent proposal document</div>
+                    <div class="timeline-entry-meta">
+                      Jan 9, 2026 at 4:30 PM | Logged by Sarah Lee
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Task</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Schedule demo for next week</div>
+                    <div class="timeline-entry-meta">
+                      Jan 8, 2026 at 10:00 AM | Completed
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="timeline-entry" onclick="toggleDetails(this)">
+                <div class="timeline-entry-header">
+                  <span class="timeline-entry-type">Call</span>
+                  <div class="timeline-entry-content">
+                    <div class="timeline-entry-title">Discovery call</div>
+                    <div class="timeline-entry-meta">
+                      Jan 5, 2026 at 11:00 AM | Logged by Sarah Lee
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="activity-detail" class="screen">
+      <div class="page-container">
+        <div class="breadcrumb">
+          <a href="#">Accounts</a>
+          <span>›</span>
+          <a href="#">Acme Corporation</a>
+          <span>›</span>
+          <a href="#">Activities</a>
+          <span>›</span>
+          <span class="breadcrumb-current">Pricing negotiation call</span>
+        </div>
+
+        <div class="page-header">
+          <div class="page-header-top">
+            <div class="page-header-title-section">
+              <h1 class="page-title">
+                Pricing negotiation call <span class="badge badge-primary">Call</span>
+              </h1>
+              <div class="page-meta">
+                <span>Jan 10, 2026 at 2:30 PM</span>
+                <span>|</span>
+                <span>Logged by John Smith</span>
+                <span>|</span>
+                <span>Related to: <a href="#">Q1 Enterprise Deal</a></span>
+              </div>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-secondary">Back to Activities</button>
+              <button class="btn btn-destructive">Delete Activity</button>
+              <button class="btn btn-primary">Edit Activity</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Activity Details</h2>
+          </div>
+          <div class="section-body">
+            <div class="field-grid">
+              <div class="field-row">
+                <div class="field-label">Related Account:</div>
+                <div class="field-value"><a href="#">Acme Corporation</a></div>
+                <div class="field-label">Related Deal:</div>
+                <div class="field-value"><a href="#">Q1 Enterprise Deal</a></div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Participants:</div>
+                <div class="field-value"><a href="#">Jane Doe</a></div>
+                <div class="field-label">Duration:</div>
+                <div class="field-value">30 minutes</div>
+              </div>
+              <div class="field-row">
+                <div class="field-label">Owner:</div>
+                <div class="field-value">John Smith</div>
+                <div class="field-label">Status:</div>
+                <div class="field-value">
+                  <span class="badge badge-success">Completed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h2 class="section-title">Notes</h2>
+          </div>
+          <div class="section-body">
+            <div class="notes-section">
+              Discussed final pricing and implementation timeline. Jane confirmed
+              budget approval and is ready to move forward pending legal review. She
+              mentioned they need to start by end of month to meet their Q1 internal
+              deadline.<br /><br />
+              Action items:<br />
+              - Send updated SOW to legal team<br />
+              - Coordinate with implementation team for kickoff date<br />
+              - Schedule follow-up call for next week
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const activateTab = (screenId) => {
+        document.querySelectorAll(".nav-tab").forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.screen === screenId);
+        });
+
+        document.querySelectorAll(".screen").forEach((screen) => {
+          screen.classList.toggle("active", screen.id === screenId);
+        });
+      };
+
+      window.addEventListener("DOMContentLoaded", () => {
+        activateTab("home");
+      });
+
+      document.querySelectorAll(".nav-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          activateTab(tab.dataset.screen);
+        });
+      });
+
+      const toggleDetails = (entry) => {
+        const details = entry.querySelector(".timeline-entry-details");
+        if (details) {
+          details.classList.toggle("expanded");
+        }
+      };
+    </script>
+  </body>
+</html>

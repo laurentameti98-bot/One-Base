@@ -1,26 +1,47 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Contact, PaginatedResponse } from '../types';
+import { formatDate } from '../utils/formatters';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
+import { usePagination } from '../hooks/usePagination';
+import { PaginationNumbered } from '../components/PaginationNumbered';
+import { SearchBar } from '../components/SearchBar';
 
 export function ContactsList() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
+  const { pagination, setPagination, updatePagination, startIndex, endIndex } = usePagination(20);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const accountIdFilter = searchParams.get('accountId');
+  const debouncedSearchQuery = useDebouncedSearch(searchQuery, 300, () => {
+    // Reset to page 1 when search changes (only if not already page 1)
+    if (pagination.page !== 1) {
+      updatePagination({ ...pagination, page: 1 });
+    }
+  });
 
   useEffect(() => {
     loadContacts();
-  }, [pagination.page, searchQuery]);
+  }, [pagination.page, debouncedSearchQuery, accountIdFilter]);
 
   async function loadContacts() {
     try {
-      setLoading(true);
-      const response = await api.contacts.list(pagination.page, pagination.pageSize, searchQuery || undefined) as PaginatedResponse<Contact>;
+      // Only set loading to true if not already loading to avoid unnecessary re-renders
+      if (!loading) {
+        setLoading(true);
+      }
+      const response = await api.contacts.list(
+        pagination.page,
+        pagination.pageSize,
+        debouncedSearchQuery || undefined,
+        accountIdFilter || undefined
+      ) as PaginatedResponse<Contact>;
       setContacts(response.items);
-      setPagination(response.pagination);
+      updatePagination(response.pagination);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load contacts');
@@ -29,102 +50,130 @@ export function ContactsList() {
     }
   }
 
-  const startIndex = pagination.total > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
-  const endIndex = Math.min(pagination.page * pagination.pageSize, pagination.total);
 
-  if (loading && contacts.length === 0) {
-    return (
-      <div>
-        <h1>Contacts</h1>
-        <div>Loading...</div>
-      </div>
-    );
-  }
+
+  // Removed early return to prevent input focus loss when loading state changes
+  // The table structure is now always rendered, preventing DOM unmounting
 
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-        <Link to="/">Home</Link>
+    <div className="page-container">
+      <div className="breadcrumb">
+        <span className="breadcrumb-current">Contacts</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Contacts</h1>
-        <button onClick={() => navigate('/contacts/new')}>Create Contact</button>
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">Contacts</h1>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => navigate('/contacts/new')}>Create Contact</button>
+          </div>
+        </div>
       </div>
 
-      {error && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>Error: {error}</div>}
-      
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search contacts..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPagination({ ...pagination, page: 1 });
-          }}
-        />
-      </div>
-
-      {pagination.total > 0 && (
-        <div style={{ marginBottom: '10px' }}>
-          Showing {startIndex}–{endIndex} of {pagination.total}
+      {error && (
+        <div className="error-message">
+          Error: {error}
         </div>
       )}
 
-      {contacts.length === 0 && !loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', border: '1px solid #ccc' }}>
-          <p>No contacts found.</p>
-          {!searchQuery && (
-            <button onClick={() => navigate('/contacts/new')}>Create Contact</button>
+      {accountIdFilter && (
+        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+          Filtered by Account: {accountIdFilter.substring(0, 8)}... (
+          <Link to="/contacts" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          )
+        </div>
+      )}
+
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search contacts..."
+      >
+        <select className="form-select" style={{ width: '200px' }}>
+          <option>All Accounts</option>
+        </select>
+      </SearchBar>
+
+      <div className="content-section">
+        <div className="section-body section-body-compact">
+          {loading && contacts.length === 0 ? (
+            <div style={{ padding: 'var(--space-lg)', textAlign: 'center' }}>Loading...</div>
+          ) : (
+            <>
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Account</th>
+                      <th>Title</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Last Contacted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contacts.length === 0 && !loading ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
+                          <div className="empty-state">
+                            <p className="empty-state-text">No contacts found.</p>
+                            {!searchQuery && !accountIdFilter && (
+                              <button className="btn btn-primary" onClick={() => navigate('/contacts/new')}>Create Contact</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      contacts.map(contact => (
+                        <tr
+                          key={contact.id}
+                          onClick={() => navigate(`/contacts/${contact.id}`)}
+                        >
+                          <td>
+                            <Link to={`/contacts/${contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                              {contact.firstName} {contact.lastName}
+                            </Link>
+                          </td>
+                          <td>
+                            {contact.account ? (
+                              <Link to={`/accounts/${contact.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                {contact.account.name}
+                              </Link>
+                            ) : (
+                              <span className="field-value-empty">—</span>
+                            )}
+                          </td>
+                          <td>{contact.title || <span className="field-value-empty">—</span>}</td>
+                          <td>
+                            {contact.email ? (
+                              <a href={`mailto:${contact.email}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                {contact.email}
+                              </a>
+                            ) : (
+                              <span className="field-value-empty">—</span>
+                            )}
+                          </td>
+                          <td>{contact.phone || <span className="field-value-empty">—</span>}</td>
+                          <td>{formatDate(contact.updatedAt)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationNumbered
+                pagination={pagination}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={(page: number) => setPagination({ ...pagination, page })}
+              />
+            </>
           )}
         </div>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Name</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Account</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Email</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Title</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Updated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contacts.map(contact => (
-              <tr
-                key={contact.id}
-                onClick={() => navigate(`/contacts/${contact.id}`)}
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-              >
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{contact.firstName} {contact.lastName}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
-                  {contact.account ? (
-                    <Link to={`/accounts/${contact.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                      {contact.account.name}
-                    </Link>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{contact.email || '—'}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{contact.title || '—'}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{new Date(contact.updatedAt).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {pagination.totalPages > 1 && (
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button disabled={pagination.page === 1} onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}>Previous</button>
-          <span>Page {pagination.page} of {pagination.totalPages}</span>
-          <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}>Next</button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

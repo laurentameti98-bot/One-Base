@@ -1,30 +1,57 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Activity, PaginatedResponse } from '../types';
+import { formatDate, formatTimestamp } from '../utils/formatters';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
+import { usePagination } from '../hooks/usePagination';
+import { PaginationSimple } from '../components/PaginationSimple';
+import { SearchBar } from '../components/SearchBar';
+
+const ACTIVITY_TYPES = ['call', 'meeting', 'email', 'task'] as const;
 
 export function ActivitiesList() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
+  const { pagination, setPagination, updatePagination, startIndex, endIndex } = usePagination(20);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const accountIdFilter = searchParams.get('accountId');
+  const contactIdFilter = searchParams.get('contactId');
+  const dealIdFilter = searchParams.get('dealId');
+  const debouncedSearchQuery = useDebouncedSearch(searchQuery, 300, () => {
+    // Reset to page 1 when search changes (only if not already page 1)
+    if (pagination.page !== 1) {
+      updatePagination({ ...pagination, page: 1 });
+    }
+  });
 
   useEffect(() => {
     loadActivities();
-  }, [pagination.page, searchQuery]);
+  }, [pagination.page, debouncedSearchQuery, typeFilter, accountIdFilter, contactIdFilter, dealIdFilter]);
 
   async function loadActivities() {
     try {
-      setLoading(true);
+      // Only set loading to true if not already loading to avoid unnecessary re-renders
+      if (!loading) {
+        setLoading(true);
+      }
       const response = await api.activities.list(
         pagination.page,
         pagination.pageSize,
-        searchQuery || undefined
+        debouncedSearchQuery || undefined,
+        accountIdFilter || undefined,
+        contactIdFilter || undefined,
+        dealIdFilter || undefined,
+        typeFilter || undefined
       ) as PaginatedResponse<Activity>;
+
       setActivities(response.items);
-      setPagination(response.pagination);
+      updatePagination(response.pagination);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load activities');
@@ -33,136 +60,164 @@ export function ActivitiesList() {
     }
   }
 
-  const startIndex = pagination.total > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
-  const endIndex = Math.min(pagination.page * pagination.pageSize, pagination.total);
 
-  function formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString();
-  }
 
-  function getRelatedTo(activity: Activity): string {
-    if (activity.deal) {
-      return `Deal: ${activity.deal.name}`;
-    }
-    if (activity.contact) {
-      return `Contact: ${activity.contact.firstName} ${activity.contact.lastName}`;
-    }
-    if (activity.account) {
-      return `Account: ${activity.account.name}`;
-    }
-    return '—';
-  }
-
-  function getRelatedLink(activity: Activity): string | null {
-    if (activity.dealId) {
-      return `/deals/${activity.dealId}`;
-    }
-    if (activity.contactId) {
-      return `/contacts/${activity.contactId}`;
-    }
-    if (activity.accountId) {
-      return `/accounts/${activity.accountId}`;
-    }
-    return null;
-  }
+  const activeFilter = accountIdFilter || contactIdFilter || dealIdFilter;
 
   if (loading && activities.length === 0) {
     return (
-      <div>
-        <h1>Activities</h1>
+      <div className="page-container">
+        <div className="breadcrumb">
+          <span className="breadcrumb-current">Activities</span>
+        </div>
+        <div className="page-header">
+          <div className="page-header-top">
+            <div className="page-header-title-section">
+              <h1 className="page-title">Activities</h1>
+            </div>
+          </div>
+        </div>
         <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-        <Link to="/">Home</Link> / Activities
+    <div className="page-container">
+      <div className="breadcrumb">
+        <span className="breadcrumb-current">Activities</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Activities</h1>
-        <button onClick={() => navigate('/activities/new')}>Create Activity</button>
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">Activities</h1>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => navigate('/activities/new')}>Log Activity</button>
+          </div>
+        </div>
       </div>
 
-      {error && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>Error: {error}</div>}
-      
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search activities..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPagination({ ...pagination, page: 1 });
-          }}
-        />
-      </div>
-
-      {pagination.total > 0 && (
-        <div style={{ marginBottom: '10px' }}>
-          Showing {startIndex}–{endIndex} of {pagination.total}
+      {error && (
+        <div className="error-message">
+          Error: {error}
         </div>
       )}
+
+      {activeFilter && (
+        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+          Filtered by: {accountIdFilter && `Account: ${accountIdFilter.substring(0, 8)}...`}
+          {contactIdFilter && `Contact: ${contactIdFilter.substring(0, 8)}...`}
+          {dealIdFilter && `Deal: ${dealIdFilter.substring(0, 8)}...`}
+          {' '}(<Link to="/activities" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>)
+        </div>
+      )}
+
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search activities..."
+      >
+        <select
+          className="form-select"
+          value={typeFilter}
+          onChange={(e) => {
+            setTypeFilter(e.target.value);
+            if (pagination.page !== 1) {
+              updatePagination({ ...pagination, page: 1 });
+            }
+          }}
+          style={{ width: '200px' }}
+        >
+          <option value="">All Activities</option>
+          {ACTIVITY_TYPES.map(type => (
+            <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+          ))}
+        </select>
+      </SearchBar>
 
       {activities.length === 0 && !loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', border: '1px solid #ccc' }}>
-          <p>No activities found.</p>
-          {!searchQuery && (
-            <button onClick={() => navigate('/activities/new')}>Create Activity</button>
-          )}
+        <div className="content-section">
+          <div className="section-body empty-state">
+            <p className="empty-state-text">No activities found.</p>
+            {!searchQuery && !typeFilter && !activeFilter && (
+              <button className="btn btn-primary" onClick={() => navigate('/activities/new')}>Log Activity</button>
+            )}
+          </div>
         </div>
       ) : activities.length > 0 ? (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Type</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Subject</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Related To</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Due Date</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Updated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activities.map(activity => {
-              const relatedLink = getRelatedLink(activity);
-              return (
-                <tr
-                  key={activity.id}
-                  onClick={() => navigate(`/activities/${activity.id}`)}
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                >
-                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{activity.type}</td>
-                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{activity.subject}</td>
-                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
-                    {relatedLink ? (
-                      <Link to={relatedLink} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                        {getRelatedTo(activity)}
-                      </Link>
-                    ) : (
-                      getRelatedTo(activity)
+        <div className="content-section">
+          <div className="section-body">
+            <div className="timeline">
+              {activities.map(activity => {
+                const isExpanded = expandedActivityId === activity.id;
+                return (
+                  <div
+                    key={activity.id}
+                    className="timeline-entry"
+                    onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}
+                  >
+                    <div className="timeline-entry-header">
+                      <span className="timeline-entry-type">{activity.type.toUpperCase()}</span>
+                      <div className="timeline-entry-content">
+                        <div className="timeline-entry-title">
+                          <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                            {activity.subject}
+                          </Link>
+                        </div>
+                        <div className="timeline-entry-meta">
+                          {formatTimestamp(activity.createdAt)}
+                          {activity.deal && (
+                            <> • <Link to={`/deals/${activity.deal.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Deal: {activity.deal.name}</Link></>
+                          )}
+                          {activity.contact && !activity.deal && (
+                            <> • <Link to={`/contacts/${activity.contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Contact: {activity.contact.firstName} {activity.contact.lastName}</Link></>
+                          )}
+                          {activity.account && !activity.deal && !activity.contact && (
+                            <> • <Link to={`/accounts/${activity.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Account: {activity.account.name}</Link></>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div className="timeline-entry-details expanded">
+                        {activity.body && (
+                          <div className="timeline-entry-notes">
+                            {activity.body}
+                          </div>
+                        )}
+                        {activity.status && (
+                          <div className="timeline-entry-details-row">
+                            <div className="timeline-entry-details-label">Status:</div>
+                            <div>{activity.status}</div>
+                          </div>
+                        )}
+                        {activity.dueDate && (
+                          <div className="timeline-entry-details-row">
+                            <div className="timeline-entry-details-label">Due Date:</div>
+                            <div>{formatDate(activity.dueDate)}</div>
+                          </div>
+                        )}
+                        <div className="timeline-entry-actions">
+                          <Link to={`/activities/${activity.id}`} className="btn btn-sm btn-secondary">View Details</Link>
+                        </div>
+                      </div>
                     )}
-                  </td>
-                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{formatDate(activity.dueDate)}</td>
-                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{new Date(activity.updatedAt).toLocaleString()}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       ) : null}
 
-      {pagination.totalPages > 1 && (
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button disabled={pagination.page === 1} onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}>Previous</button>
-          <span>Page {pagination.page} of {pagination.totalPages}</span>
-          <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}>Next</button>
-        </div>
-      )}
+      <PaginationSimple
+        pagination={pagination}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        onPageChange={(page: number) => setPagination({ ...pagination, page })}
+      />
     </div>
   );
 }

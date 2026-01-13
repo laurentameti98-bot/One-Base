@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Deal, PaginatedResponse } from '../types';
 
@@ -9,11 +9,13 @@ export function DealsPipeline() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const accountIdFilter = searchParams.get('accountId');
 
   useEffect(() => {
     loadDeals();
-  }, []);
+  }, [accountIdFilter]);
 
   async function loadDeals() {
     try {
@@ -25,7 +27,13 @@ export function DealsPipeline() {
       let totalPages = 1;
 
       do {
-        const response = await api.deals.list(page, pageSize) as PaginatedResponse<Deal>;
+        const response = await api.deals.list(
+          page,
+          pageSize,
+          undefined,
+          accountIdFilter || undefined,
+          undefined
+        ) as PaginatedResponse<Deal>;
         allDeals.push(...response.items);
         totalPages = response.pagination.totalPages;
         page++;
@@ -50,71 +58,109 @@ export function DealsPipeline() {
     }).format(amount);
   }
 
-  const dealsByStage = DEAL_STAGES.map(stage => ({
-    stage,
-    deals: deals.filter(deal => deal.stage === stage),
-  }));
+  function formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  const dealsByStage = DEAL_STAGES.map(stage => {
+    const stageDeals = deals.filter(deal => deal.stage === stage);
+    const totalAmount = stageDeals.reduce((sum, deal) => sum + (deal.amount || 0), 0);
+    return {
+      stage,
+      deals: stageDeals,
+      totalAmount,
+    };
+  });
+
+  function getStageDisplayName(stage: string): string {
+    return stage.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
 
   if (loading) {
     return (
-      <div>
-        <h1>Pipeline</h1>
+      <div className="page-container">
+        <div className="breadcrumb">
+          <Link to="/deals">Deals</Link>
+        </div>
+        <div className="page-header">
+          <div className="page-header-top">
+            <div className="page-header-title-section">
+              <h1 className="page-title">Deals</h1>
+            </div>
+          </div>
+        </div>
         <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+    <div className="page-container">
+      <div className="breadcrumb">
         <Link to="/deals">Deals</Link>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '15px', borderBottom: '2px solid #ccc' }}>
-        <h1>Pipeline</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => navigate('/deals')}>Table View</button>
-          <button onClick={() => navigate('/deals/new')}>Create Deal</button>
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">Deals</h1>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-secondary" onClick={() => navigate('/deals')}>List View</button>
+            <button className="btn btn-primary" onClick={() => navigate('/deals/new')}>Create Deal</button>
+          </div>
         </div>
       </div>
 
-      {error && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '20px' }}>Error: {error}</div>}
+      {error && (
+        <div className="error-message">
+          Error: {error}
+        </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${DEAL_STAGES.length}, 1fr)`, gap: '20px', overflowX: 'auto' }}>
-        {dealsByStage.map(({ stage, deals: stageDeals }) => (
-          <div key={stage} style={{ minWidth: '200px' }}>
-            <div style={{ marginBottom: '10px', paddingBottom: '10px', borderBottom: '2px solid #ccc' }}>
-              <h2 style={{ fontSize: '16px', margin: 0, textTransform: 'capitalize' }}>{stage.replace('_', ' ')} ({stageDeals.length})</h2>
+      {accountIdFilter && (
+        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+          Filtered by Account: {accountIdFilter.substring(0, 8)}... (
+          <Link to="/deals/pipeline" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          )
+        </div>
+      )}
+
+      <div className="pipeline-container">
+        {dealsByStage.map(({ stage, deals: stageDeals, totalAmount }) => (
+          <div key={stage} className="pipeline-column">
+            <div className="pipeline-column-header">
+              <div className="pipeline-column-title">{getStageDisplayName(stage)}</div>
+              <div className="pipeline-column-stats">
+                {stageDeals.length} {stageDeals.length === 1 ? 'deal' : 'deals'} · {formatAmount(totalAmount)}
+              </div>
             </div>
-            <div>
+            <div className="pipeline-column-body">
               {stageDeals.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', border: '1px dashed #ccc' }}>
+                <div className="pipeline-empty">
                   No deals
                 </div>
               ) : (
                 stageDeals.map(deal => (
                   <div
                     key={deal.id}
+                    className="deal-card"
                     onClick={() => navigate(`/deals/${deal.id}`)}
-                    style={{
-                      padding: '10px',
-                      marginBottom: '10px',
-                      border: '1px solid #ccc',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                   >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{deal.name}</div>
+                    <div className="deal-card-title">{deal.name}</div>
                     {deal.account && (
-                      <div style={{ fontSize: '12px', marginBottom: '5px' }}>
+                      <div className="deal-card-account">
                         <Link to={`/accounts/${deal.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                           {deal.account.name}
                         </Link>
                       </div>
                     )}
                     {deal.amount && (
-                      <div style={{ fontSize: '12px' }}>{formatAmount(deal.amount)}</div>
+                      <div className="deal-card-meta">
+                        <span>{formatAmount(deal.amount)}</span>
+                        {deal.closeDate && <span>{formatDate(deal.closeDate)}</span>}
+                      </div>
                     )}
                   </div>
                 ))

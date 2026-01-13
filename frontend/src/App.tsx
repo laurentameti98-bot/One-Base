@@ -1,4 +1,5 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Home } from './pages/Home';
 import { AccountsList } from './pages/AccountsList';
 import { AccountDetail } from './pages/AccountDetail';
 import { AccountCreate } from './pages/AccountCreate';
@@ -14,12 +15,32 @@ import { ActivityDetail } from './pages/ActivityDetail';
 import { ActivityCreate } from './pages/ActivityCreate';
 
 function App() {
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <div>
-      <nav>
-        <Link to="/accounts">Accounts</Link> | <Link to="/contacts">Contacts</Link> | <Link to="/deals">Deals</Link> | <Link to="/activities">Activities</Link>
+      <nav className="nav">
+        <div className="nav-tabs">
+          <Link to="/accounts" className={`nav-tab ${isActive('/accounts') ? 'active' : ''}`}>
+            Accounts
+          </Link>
+          <Link to="/contacts" className={`nav-tab ${isActive('/contacts') ? 'active' : ''}`}>
+            Contacts
+          </Link>
+          <Link to="/deals" className={`nav-tab ${isActive('/deals') ? 'active' : ''}`}>
+            Deals
+          </Link>
+          <Link to="/activities" className={`nav-tab ${isActive('/activities') ? 'active' : ''}`}>
+            Activities
+          </Link>
+        </div>
       </nav>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/accounts" element={<AccountsList />} />
         <Route path="/accounts/new" element={<AccountCreate />} />
         <Route path="/accounts/:id" element={<AccountDetail />} />

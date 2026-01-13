@@ -16,7 +16,7 @@ export const updateContactSchema = createContactSchema.partial();
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 
-export async function getContacts(page: number = 1, pageSize: number = 20, search?: string) {
+export async function getContacts(page: number = 1, pageSize: number = 20, search?: string, accountId?: string) {
   const skip = (page - 1) * pageSize;
   
   const baseWhere: any = {
@@ -25,6 +25,10 @@ export async function getContacts(page: number = 1, pageSize: number = 20, searc
       deletedAt: null,
     },
   };
+
+  if (accountId) {
+    baseWhere.accountId = accountId;
+  }
 
   let whereClause = baseWhere;
   

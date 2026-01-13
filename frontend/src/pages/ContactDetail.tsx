@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, ValidationError } from '../api/client';
 import { Contact, Account, Activity } from '../types';
+import { formatDate, formatTimestamp } from '../utils/formatters';
 
 export function ContactDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export function ContactDetail() {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ accountId: '', firstName: '', lastName: '', email: '', phone: '', title: '' });
   const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'activities'>('overview');
 
   useEffect(() => {
     if (id) {
@@ -96,115 +98,200 @@ export function ContactDetail() {
     }
   }
 
+
   if (!contact) {
     if (loading) {
-      return null; // Skip full-page spinner per UX contract
+      return null;
     }
-    return <div>Contact not found</div>;
+    return (
+      <div className="page-container">
+        <div>Contact not found</div>
+      </div>
+    );
   }
 
+  const activities = contact.activities || [];
+  const displayActivities = activities.slice(0, 5);
+  const hasMoreActivities = activities.length > 5;
+
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+    <div className="page-container">
+      <div className="breadcrumb">
         <Link to="/contacts">Contacts</Link>
+        <span>›</span>
+        <span className="breadcrumb-current">{contact.firstName} {contact.lastName}</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '15px', borderBottom: '2px solid #ccc' }}>
-        <h1>{contact.firstName} {contact.lastName}</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {!editing && (
-            <>
-              <button onClick={() => setEditing(true)}>Edit</button>
-              <button onClick={handleDelete}>Delete</button>
-            </>
-          )}
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">{contact.firstName} {contact.lastName}</h1>
+            <div className="page-subtitle">{contact.title || 'Contact'}</div>
+            <div className="page-meta">
+              <span>Last Updated: {new Date(contact.updatedAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div className="page-actions">
+            {!editing && (
+              <>
+                <button className="btn btn-secondary" onClick={() => setEditing(true)}>Edit Contact</button>
+                <button className="btn btn-primary" onClick={() => navigate(`/activities/new?contactId=${contact.id}`)}>Log Activity</button>
+                <button className="btn btn-ghost" onClick={handleDelete}>Delete</button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="tabs">
+          <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+            Overview
+          </button>
+          <button className={`tab ${activeTab === 'activities' ? 'active' : ''}`} onClick={() => setActiveTab('activities')}>
+            Activities
+          </button>
         </div>
       </div>
 
-      {error && !editing && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '20px' }}>Error: {error}</div>}
+      {error && !editing && (
+        <div className="error-message">
+          Error: {error}
+        </div>
+      )}
 
       {!editing ? (
         <div>
-          <div style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #ccc' }}>
-            <div style={{ fontSize: '14px', marginBottom: '5px' }}>Account</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              {contact.account ? (
-                <Link to={`/accounts/${contact.account.id}`}>{contact.account.name}</Link>
-              ) : (
-                contact.accountId
-              )}
-            </div>
-          </div>
-
-          <section style={{ marginBottom: '30px' }}>
-            <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>Contact Information</h2>
-            <dl style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', margin: 0 }}>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>First Name:</dt>
-              <dd style={{ margin: 0 }}>{contact.firstName}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Last Name:</dt>
-              <dd style={{ margin: 0 }}>{contact.lastName}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Email:</dt>
-              <dd style={{ margin: 0 }}>{contact.email || '—'}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Phone:</dt>
-              <dd style={{ margin: 0 }}>{contact.phone || '—'}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Title:</dt>
-              <dd style={{ margin: 0 }}>{contact.title || '—'}</dd>
-            </dl>
-          </section>
-
-          <section style={{ marginBottom: '30px' }}>
-            <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>System Information</h2>
-            <dl style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', margin: 0 }}>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Created:</dt>
-              <dd style={{ margin: 0 }}>{new Date(contact.createdAt).toLocaleString()}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Updated:</dt>
-              <dd style={{ margin: 0 }}>{new Date(contact.updatedAt).toLocaleString()}</dd>
-            </dl>
-          </section>
-
-          {(() => {
-            const activities = contact.activities || [];
-            const displayActivities = activities.slice(0, 5);
-            const hasMoreActivities = activities.length > 5;
-
-            function formatDate(dateString: string | null | undefined): string {
-              if (!dateString) return '—';
-              return new Date(dateString).toLocaleDateString();
-            }
-
-            function formatTimestamp(dateString: string): string {
-              return new Date(dateString).toLocaleString();
-            }
-
-            return (
-              <section style={{ marginBottom: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h2 style={{ fontSize: '18px', margin: 0 }}>Activities Preview ({activities.length})</h2>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button onClick={() => navigate(`/activities/new?contactId=${contact.id}`)}>Create Activity</button>
-                    {hasMoreActivities && (
-                      <Link to={`/activities?contactId=${contact.id}`}>View all</Link>
-                    )}
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <>
+              {/* Contact Information Section */}
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Contact Information</h2>
+                </div>
+                <div className="section-body">
+                  <div className="field-grid">
+                    <div className="field-row">
+                      <div className="field-label">Account:</div>
+                      <div className="field-value">
+                        {contact.account ? (
+                          <Link to={`/accounts/${contact.account.id}`}>{contact.account.name}</Link>
+                        ) : (
+                          <span className="field-value-empty">—</span>
+                        )}
+                      </div>
+                      <div className="field-label">Title:</div>
+                      <div className="field-value">{contact.title || <span className="field-value-empty">—</span>}</div>
+                    </div>
+                    <div className="field-row">
+                      <div className="field-label">Email:</div>
+                      <div className="field-value">
+                        {contact.email ? (
+                          <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                        ) : (
+                          <span className="field-value-empty">—</span>
+                        )}
+                      </div>
+                      <div className="field-label">Phone:</div>
+                      <div className="field-value">{contact.phone || <span className="field-value-empty">—</span>}</div>
+                    </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Recent Activities Preview */}
+              <div className="content-section">
+                <div className="section-header">
+                  <h2 className="section-title">Recent Activities</h2>
+                  {hasMoreActivities && (
+                    <Link to={`/activities?contactId=${contact.id}`} className="section-action">View all</Link>
+                  )}
+                </div>
+                <div className="section-body">
+                  {activities.length > 0 ? (
+                    <div className="timeline">
+                      {displayActivities.map((activity: Activity) => {
+                        const isExpanded = expandedActivityId === activity.id;
+                        return (
+                          <div key={activity.id} className="timeline-entry" onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}>
+                            <div className="timeline-entry-header">
+                              <span className="timeline-entry-type">{activity.type.toUpperCase()}</span>
+                              <div className="timeline-entry-content">
+                                <div className="timeline-entry-title">
+                                  <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                    {activity.subject}
+                                  </Link>
+                                </div>
+                                <div className="timeline-entry-meta">
+                                  {formatTimestamp(activity.createdAt)}
+                                  {activity.deal && (
+                                    <> • <Link to={`/deals/${activity.deal.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Deal: {activity.deal.name}</Link></>
+                                  )}
+                                  {activity.account && !activity.deal && (
+                                    <> • <Link to={`/accounts/${activity.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Account: {activity.account.name}</Link></>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="timeline-entry-details expanded">
+                                {activity.body && (
+                                  <div className="timeline-entry-notes">
+                                    {activity.body}
+                                  </div>
+                                )}
+                                {activity.status && (
+                                  <div className="timeline-entry-details-row">
+                                    <div className="timeline-entry-details-label">Status:</div>
+                                    <div>{activity.status}</div>
+                                  </div>
+                                )}
+                                {activity.dueDate && (
+                                  <div className="timeline-entry-details-row">
+                                    <div className="timeline-entry-details-label">Due Date:</div>
+                                    <div>{formatDate(activity.dueDate)}</div>
+                                  </div>
+                                )}
+                                <div className="timeline-entry-actions">
+                                  <Link to={`/activities/${activity.id}`} className="btn btn-sm btn-secondary">View Details</Link>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <p className="empty-state-text">No activities yet</p>
+                      <button className="btn btn-primary" onClick={() => navigate(`/activities/new?contactId=${contact.id}`)}>Log Activity</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Activities Tab */}
+          {activeTab === 'activities' && (
+            <div className="content-section">
+              <div className="section-header">
+                <h2 className="section-title">All Activities</h2>
+              </div>
+              <div className="section-body">
                 {activities.length > 0 ? (
-                  <div>
-                    {displayActivities.map((activity: Activity) => {
+                  <div className="timeline">
+                    {activities.map((activity: Activity) => {
                       const isExpanded = expandedActivityId === activity.id;
                       return (
-                        <div key={activity.id} style={{ marginBottom: '10px', border: '1px solid #eee', padding: '10px' }}>
-                          <div
-                            onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}
-                            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '5px' }}>
-                                <span style={{ fontWeight: 'bold' }}>{activity.type}</span>
+                        <div key={activity.id} className="timeline-entry" onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}>
+                          <div className="timeline-entry-header">
+                            <span className="timeline-entry-type">{activity.type.toUpperCase()}</span>
+                            <div className="timeline-entry-content">
+                              <div className="timeline-entry-title">
                                 <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                   {activity.subject}
                                 </Link>
                               </div>
-                              <div style={{ fontSize: '12px', color: '#666' }}>
+                              <div className="timeline-entry-meta">
                                 {formatTimestamp(activity.createdAt)}
                                 {activity.deal && (
                                   <> • <Link to={`/deals/${activity.deal.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Deal: {activity.deal.name}</Link></>
@@ -216,25 +303,26 @@ export function ContactDetail() {
                             </div>
                           </div>
                           {isExpanded && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+                            <div className="timeline-entry-details expanded">
                               {activity.body && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Body:</strong>
-                                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px' }}>{activity.body}</div>
+                                <div className="timeline-entry-notes">
+                                  {activity.body}
                                 </div>
                               )}
                               {activity.status && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Status:</strong> {activity.status}
+                                <div className="timeline-entry-details-row">
+                                  <div className="timeline-entry-details-label">Status:</div>
+                                  <div>{activity.status}</div>
                                 </div>
                               )}
                               {activity.dueDate && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Due Date:</strong> {formatDate(activity.dueDate)}
+                                <div className="timeline-entry-details-row">
+                                  <div className="timeline-entry-details-label">Due Date:</div>
+                                  <div>{formatDate(activity.dueDate)}</div>
                                 </div>
                               )}
-                              <div style={{ marginTop: '10px' }}>
-                                <Link to={`/activities/${activity.id}`}>View Details</Link>
+                              <div className="timeline-entry-actions">
+                                <Link to={`/activities/${activity.id}`} className="btn btn-sm btn-secondary">View Details</Link>
                               </div>
                             </div>
                           )}
@@ -243,79 +331,120 @@ export function ContactDetail() {
                     })}
                   </div>
                 ) : (
-                  <div style={{ padding: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
-                    <p>No activities yet.</p>
-                    <button onClick={() => navigate(`/activities/new?contactId=${contact.id}`)} style={{ marginTop: '10px' }}>Log Activity</button>
+                  <div className="empty-state">
+                    <p className="empty-state-text">No activities yet</p>
+                    <button className="btn btn-primary" onClick={() => navigate(`/activities/new?contactId=${contact.id}`)}>Log Activity</button>
                   </div>
                 )}
-              </section>
-            );
-          })()}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
-        <div>
-          <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>Edit Contact</h2>
-          <form onSubmit={handleUpdate} noValidate>
-            {error && (
-              <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>
-                <strong>Validation Error:</strong> {error}
+        <div className="content-section">
+          <div className="section-header">
+            <h2 className="section-title">Edit Contact</h2>
+          </div>
+          <div className="section-body">
+            <form onSubmit={handleUpdate} noValidate>
+              {error && (
+                <div className="error-message">
+                  <strong>Validation Error:</strong> {error}
+                </div>
+              )}
+              <div className="field-grid">
+                <div className="field-row">
+                  <div className="field-label">Account:</div>
+                  <div>
+                    <select
+                      className="form-input"
+                      value={formData.accountId}
+                      onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
+                    >
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                    {fieldErrors.accountId && <div className="form-error">{fieldErrors.accountId}</div>}
+                  </div>
+                  <div className="field-label">Title:</div>
+                  <div>
+                    <input
+                      className="form-input"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+                    {fieldErrors.title && <div className="form-error">{fieldErrors.title}</div>}
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">First Name:</div>
+                  <div>
+                    <input
+                      className="form-input"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    />
+                    {fieldErrors.firstName && <div className="form-error">{fieldErrors.firstName}</div>}
+                  </div>
+                  <div className="field-label">Last Name:</div>
+                  <div>
+                    <input
+                      className="form-input"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    />
+                    {fieldErrors.lastName && <div className="form-error">{fieldErrors.lastName}</div>}
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Email:</div>
+                  <div>
+                    <input
+                      className="form-input"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                    {fieldErrors.email && <div className="form-error">{fieldErrors.email}</div>}
+                  </div>
+                  <div className="field-label">Phone:</div>
+                  <div>
+                    <input
+                      className="form-input"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                    {fieldErrors.phone && <div className="form-error">{fieldErrors.phone}</div>}
+                  </div>
+                </div>
               </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', marginBottom: '15px' }}>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Account:</label>
-              <div>
-                <select value={formData.accountId} onChange={(e) => setFormData({ ...formData, accountId: e.target.value })} style={{ width: '100%', maxWidth: '400px' }}>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                  ))}
-                </select>
-                {fieldErrors.accountId && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.accountId}</div>}
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">Save</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setEditing(false);
+                    setError(null);
+                    setFieldErrors({});
+                    if (contact) {
+                      setFormData({
+                        accountId: contact.accountId,
+                        firstName: contact.firstName,
+                        lastName: contact.lastName,
+                        email: contact.email || '',
+                        phone: contact.phone || '',
+                        title: contact.title || '',
+                      });
+                    }
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>First Name:</label>
-              <div>
-                <input value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.firstName && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.firstName}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Last Name:</label>
-              <div>
-                <input value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.lastName && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.lastName}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Email:</label>
-              <div>
-                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.email && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.email}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Phone:</label>
-              <div>
-                <input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.phone && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.phone}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Title:</label>
-              <div>
-                <input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.title && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.title}</div>}
-              </div>
-            </div>
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button type="submit">Save</button>
-              <button type="button" onClick={() => {
-                setEditing(false);
-                setError(null);
-                setFieldErrors({});
-                if (contact) {
-                  setFormData({
-                    accountId: contact.accountId,
-                    firstName: contact.firstName,
-                    lastName: contact.lastName,
-                    email: contact.email || '',
-                    phone: contact.phone || '',
-                    title: contact.title || '',
-                  });
-                }
-              }}>Cancel</button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
     </div>

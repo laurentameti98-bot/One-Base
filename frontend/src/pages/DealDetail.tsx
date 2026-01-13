@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, ValidationError } from '../api/client';
-import { Deal, Account, PaginatedResponse, Activity } from '../types';
+import { Deal, Account, PaginatedResponse, Activity, Contact } from '../types';
+import { formatDate, formatAmount } from '../utils/formatters';
 
 const DEAL_STAGES = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
 
@@ -10,6 +11,7 @@ export function DealDetail() {
   const navigate = useNavigate();
   const [deal, setDeal] = useState<Deal | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -27,6 +29,7 @@ export function DealDetail() {
     if (id) {
       loadDeal();
       loadAccounts();
+      loadContacts();
     }
   }, [id]);
 
@@ -59,6 +62,22 @@ export function DealDetail() {
       console.error('Failed to load accounts for dropdown');
     }
   }
+
+  async function loadContacts() {
+    if (!deal?.accountId) return;
+    try {
+      const response = await api.contacts.list(1, 1000, undefined, deal.accountId) as PaginatedResponse<Contact>;
+      setContacts(response.items);
+    } catch (err) {
+      console.error('Failed to load contacts');
+    }
+  }
+
+  useEffect(() => {
+    if (deal?.accountId) {
+      loadContacts();
+    }
+  }, [deal?.accountId]);
 
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -102,237 +121,328 @@ export function DealDetail() {
     }
   }
 
-  function formatAmount(amount: number | null | undefined): string {
-    if (amount === null || amount === undefined) return '—';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  function formatStage(stage: string): string {
+    return stage.replace(/_/g, ' ');
   }
 
-  function formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString();
+  function formatTimestamp(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    }
+    if (diffDays < 7) {
+      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    }
+    return date.toLocaleString();
   }
 
   if (!deal) {
     if (loading) {
       return null; // Skip full-page spinner per UX contract
     }
-    return <div>Deal not found</div>;
+    return (
+      <div className="page-container">
+        <div>Deal not found</div>
+      </div>
+    );
   }
 
+  const activities = deal.activities || [];
+
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+    <div className="page-container">
+      <div className="breadcrumb">
         <Link to="/deals">Deals</Link>
+        <span>›</span>
+        <span className="breadcrumb-current">{deal.name}</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '15px', borderBottom: '2px solid #ccc' }}>
-        <h1>{deal.name}</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {!editing && (
-            <>
-              <button onClick={() => setEditing(true)}>Edit</button>
-              <button onClick={handleDelete}>Delete</button>
-            </>
-          )}
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">{deal.name}</h1>
+            <div className="page-meta">
+              {deal.account && (
+                <>
+                  <Link to={`/accounts/${deal.account.id}`}>{deal.account.name}</Link>
+                  <span>|</span>
+                </>
+              )}
+              <span className={deal.stage === 'closed_won' ? 'badge badge-success' : 'badge badge-stage'}>
+                {formatStage(deal.stage)}
+              </span>
+              <span>|</span>
+              <span>Last Updated: {formatDate(deal.updatedAt)}</span>
+            </div>
+          </div>
+          <div className="page-actions">
+            {!editing && (
+              <>
+                <button className="btn btn-destructive" onClick={handleDelete}>Delete Deal</button>
+                {deal.stage !== 'closed_won' && (
+                  <button className="btn btn-secondary" onClick={() => {
+                    // Mark as closed won - simplified, would need API call
+                    setEditing(true);
+                  }}>Mark as Closed Won</button>
+                )}
+                <button className="btn btn-primary" onClick={() => setEditing(true)}>Edit Deal</button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {error && !editing && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '20px' }}>Error: {error}</div>}
+      {error && !editing && (
+        <div className="error-message">
+          Error: {error}
+        </div>
+      )}
 
       {!editing ? (
         <div>
-          <div style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #ccc' }}>
-            <div style={{ fontSize: '14px', marginBottom: '5px' }}>Account</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              {deal.account ? (
-                <Link to={`/accounts/${deal.account.id}`}>{deal.account.name}</Link>
-              ) : (
-                deal.accountId
-              )}
+          {/* Deal Details Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2 className="section-title">Deal Details</h2>
+            </div>
+            <div className="section-body">
+              <div className="field-grid">
+                <div className="field-row">
+                  <div className="field-label">Deal Name:</div>
+                  <div className="field-value">{deal.name}</div>
+                  <div className="field-label">Stage:</div>
+                  <div className="field-value">
+                    <span className={deal.stage === 'closed_won' ? 'badge badge-success' : 'badge badge-stage'}>
+                      {formatStage(deal.stage)}
+                    </span>
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Account:</div>
+                  <div className="field-value">
+                    {deal.account ? (
+                      <Link to={`/accounts/${deal.account.id}`}>{deal.account.name}</Link>
+                    ) : (
+                      <span className="field-value-empty">—</span>
+                    )}
+                  </div>
+                  <div className="field-label">Value:</div>
+                  <div className="field-value">{formatAmount(deal.amount)}</div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Close Date:</div>
+                  <div className="field-value">{formatDate(deal.closeDate)}</div>
+                  <div className="field-label"></div>
+                  <div className="field-value"></div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <section style={{ marginBottom: '30px' }}>
-            <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>Deal Information</h2>
-            <dl style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', margin: 0 }}>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Name:</dt>
-              <dd style={{ margin: 0 }}>{deal.name}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Stage:</dt>
-              <dd style={{ margin: 0 }}>{deal.stage}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Amount:</dt>
-              <dd style={{ margin: 0 }}>{formatAmount(deal.amount)}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Close Date:</dt>
-              <dd style={{ margin: 0 }}>{formatDate(deal.closeDate)}</dd>
-            </dl>
-          </section>
-
-          <section style={{ marginBottom: '30px' }}>
-            <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>System Information</h2>
-            <dl style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', margin: 0 }}>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Created:</dt>
-              <dd style={{ margin: 0 }}>{new Date(deal.createdAt).toLocaleString()}</dd>
-              <dt style={{ fontWeight: 'bold', margin: 0 }}>Updated:</dt>
-              <dd style={{ margin: 0 }}>{new Date(deal.updatedAt).toLocaleString()}</dd>
-            </dl>
-          </section>
-
-          {(() => {
-            const activities = deal.activities || [];
-            const displayActivities = activities.slice(0, 5);
-            const hasMoreActivities = activities.length > 5;
-
-            function formatDate(dateString: string | null | undefined): string {
-              if (!dateString) return '—';
-              return new Date(dateString).toLocaleDateString();
-            }
-
-            function formatTimestamp(dateString: string): string {
-              return new Date(dateString).toLocaleString();
-            }
-
-            return (
-              <section style={{ marginBottom: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h2 style={{ fontSize: '18px', margin: 0 }}>Activities Preview ({activities.length})</h2>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button onClick={() => navigate(`/activities/new?dealId=${deal.id}`)}>Create Activity</button>
-                    {hasMoreActivities && (
-                      <Link to={`/activities?dealId=${deal.id}`}>View all</Link>
-                    )}
-                  </div>
+          {/* Related Contacts Section */}
+          {contacts.length > 0 && (
+            <div className="content-section">
+              <div className="section-header">
+                <h2 className="section-title">Related Contacts</h2>
+              </div>
+              <div className="section-body section-body-compact">
+                <div className="table-container">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Title</th>
+                        <th>Email</th>
+                        <th>Role in Deal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contacts.slice(0, 5).map(contact => (
+                        <tr key={contact.id} onClick={() => navigate(`/contacts/${contact.id}`)}>
+                          <td>
+                            <Link to={`/contacts/${contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                              {contact.firstName} {contact.lastName}
+                            </Link>
+                          </td>
+                          <td>{contact.title || <span className="field-value-empty">—</span>}</td>
+                          <td>
+                            {contact.email ? (
+                              <a href={`mailto:${contact.email}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                {contact.email}
+                              </a>
+                            ) : (
+                              <span className="field-value-empty">—</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className="badge badge-primary">Contact</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                {activities.length > 0 ? (
-                  <div>
-                    {displayActivities.map((activity: Activity) => {
-                      const isExpanded = expandedActivityId === activity.id;
-                      return (
-                        <div key={activity.id} style={{ marginBottom: '10px', border: '1px solid #eee', padding: '10px' }}>
-                          <div
-                            onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}
-                            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '5px' }}>
-                                <span style={{ fontWeight: 'bold' }}>{activity.type}</span>
-                                <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                                  {activity.subject}
-                                </Link>
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#666' }}>
-                                {formatTimestamp(activity.createdAt)}
-                                {activity.contact && (
-                                  <> • <Link to={`/contacts/${activity.contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Contact: {activity.contact.firstName} {activity.contact.lastName}</Link></>
-                                )}
-                                {activity.account && !activity.contact && (
-                                  <> • <Link to={`/accounts/${activity.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>Account: {activity.account.name}</Link></>
-                                )}
-                              </div>
+              </div>
+            </div>
+          )}
+
+          {/* Deal Activities Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2 className="section-title">Deal Activities</h2>
+              <select className="form-select" style={{ width: '150px' }}>
+                <option>All Activities</option>
+                <option>Calls</option>
+                <option>Meetings</option>
+                <option>Tasks</option>
+                <option>Notes</option>
+              </select>
+            </div>
+            <div className="section-body">
+              {activities.length > 0 ? (
+                <div className="timeline">
+                  {activities.map((activity: Activity) => {
+                    const isExpanded = expandedActivityId === activity.id;
+                    return (
+                      <div key={activity.id} className="timeline-entry" onClick={() => setExpandedActivityId(isExpanded ? null : activity.id)}>
+                        <div className="timeline-entry-header">
+                          <span className="timeline-entry-type">{activity.type.toUpperCase()}</span>
+                          <div className="timeline-entry-content">
+                            <div className="timeline-entry-title">
+                              <Link to={`/activities/${activity.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                {activity.subject}
+                              </Link>
+                            </div>
+                            <div className="timeline-entry-meta">
+                              {formatTimestamp(activity.createdAt)}
+                              {activity.contact && (
+                                <> • <Link to={`/contacts/${activity.contact.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>With: {activity.contact.firstName} {activity.contact.lastName}</Link></>
+                              )}
                             </div>
                           </div>
-                          {isExpanded && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #eee' }}>
-                              {activity.body && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Body:</strong>
-                                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px' }}>{activity.body}</div>
-                                </div>
-                              )}
-                              {activity.status && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Status:</strong> {activity.status}
-                                </div>
-                              )}
-                              {activity.dueDate && (
-                                <div style={{ marginBottom: '10px' }}>
-                                  <strong>Due Date:</strong> {formatDate(activity.dueDate)}
-                                </div>
-                              )}
-                              <div style={{ marginTop: '10px' }}>
-                                <Link to={`/activities/${activity.id}`}>View Details</Link>
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ padding: '20px', textAlign: 'center', border: '1px solid #ccc' }}>
-                    <p>No activities yet.</p>
-                    <button onClick={() => navigate(`/activities/new?dealId=${deal.id}`)} style={{ marginTop: '10px' }}>Log Activity</button>
-                  </div>
-                )}
-              </section>
-            );
-          })()}
+                        {isExpanded && (
+                          <div className="timeline-entry-details expanded">
+                            {activity.body && (
+                              <div className="timeline-entry-notes">
+                                {activity.body}
+                              </div>
+                            )}
+                            {activity.status && (
+                              <div className="timeline-entry-details-row">
+                                <div className="timeline-entry-details-label">Status:</div>
+                                <div>{activity.status}</div>
+                              </div>
+                            )}
+                            {activity.dueDate && (
+                              <div className="timeline-entry-details-row">
+                                <div className="timeline-entry-details-label">Due Date:</div>
+                                <div>{formatDate(activity.dueDate)}</div>
+                              </div>
+                            )}
+                            <div className="timeline-entry-actions">
+                              <Link to={`/activities/${activity.id}`} className="btn btn-sm btn-secondary">View Details</Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p className="empty-state-text">No activities yet</p>
+                  <button className="btn btn-secondary" onClick={() => navigate(`/activities/new?dealId=${deal.id}`)}>Log Activity</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
-        <div>
-          <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>Edit Deal</h2>
-          <form onSubmit={handleUpdate} noValidate>
-            {error && (
-              <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>
-                <strong>Validation Error:</strong> {error}
+        <div className="content-section">
+          <div className="section-header">
+            <h2 className="section-title">Edit Deal</h2>
+          </div>
+          <div className="section-body">
+            <form onSubmit={handleUpdate} noValidate>
+              {error && (
+                <div className="error-message">
+                  <strong>Validation Error:</strong> {error}
+                </div>
+              )}
+              <div className="field-grid">
+                <div className="field-row">
+                  <div className="field-label">Account:</div>
+                  <div>
+                    <select className="form-input" value={formData.accountId} onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                    {fieldErrors.accountId && <div className="form-error">{fieldErrors.accountId}</div>}
+                  </div>
+                  <div className="field-label">Name:</div>
+                  <div>
+                    <input className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                    {fieldErrors.name && <div className="form-error">{fieldErrors.name}</div>}
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Stage:</div>
+                  <div>
+                    <select className="form-input" value={formData.stage} onChange={(e) => setFormData({ ...formData, stage: e.target.value as typeof DEAL_STAGES[number] })}>
+                      {DEAL_STAGES.map(stage => (
+                        <option key={stage} value={stage}>{formatStage(stage)}</option>
+                      ))}
+                    </select>
+                    {fieldErrors.stage && <div className="form-error">{fieldErrors.stage}</div>}
+                  </div>
+                  <div className="field-label">Amount:</div>
+                  <div>
+                    <input type="number" step="0.01" className="form-input" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
+                    {fieldErrors.amount && <div className="form-error">{fieldErrors.amount}</div>}
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field-label">Close Date:</div>
+                  <div>
+                    <input type="date" className="form-input" value={formData.closeDate} onChange={(e) => setFormData({ ...formData, closeDate: e.target.value })} />
+                    {fieldErrors.closeDate && <div className="form-error">{fieldErrors.closeDate}</div>}
+                  </div>
+                  <div className="field-label"></div>
+                  <div></div>
+                </div>
               </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '10px 20px', marginBottom: '15px' }}>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Account:</label>
-              <div>
-                <select value={formData.accountId} onChange={(e) => setFormData({ ...formData, accountId: e.target.value })} style={{ width: '100%', maxWidth: '400px' }}>
-                  {accounts.map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                  ))}
-                </select>
-                {fieldErrors.accountId && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.accountId}</div>}
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">Save</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setEditing(false);
+                    setError(null);
+                    setFieldErrors({});
+                    if (deal) {
+                      setFormData({
+                        accountId: deal.accountId,
+                        name: deal.name,
+                        stage: deal.stage as typeof DEAL_STAGES[number],
+                        amount: deal.amount ? deal.amount.toString() : '',
+                        closeDate: deal.closeDate ? new Date(deal.closeDate).toISOString().split('T')[0] : '',
+                      });
+                    }
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Name:</label>
-              <div>
-                <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.name && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.name}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Stage:</label>
-              <div>
-                <select value={formData.stage} onChange={(e) => setFormData({ ...formData, stage: e.target.value as typeof DEAL_STAGES[number] })} style={{ width: '100%', maxWidth: '400px' }}>
-                  {DEAL_STAGES.map(stage => (
-                    <option key={stage} value={stage}>{stage}</option>
-                  ))}
-                </select>
-                {fieldErrors.stage && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.stage}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Amount:</label>
-              <div>
-                <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.amount && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.amount}</div>}
-              </div>
-              <label style={{ fontWeight: 'bold', alignSelf: 'center' }}>Close Date:</label>
-              <div>
-                <input type="date" value={formData.closeDate} onChange={(e) => setFormData({ ...formData, closeDate: e.target.value })} style={{ width: '100%', maxWidth: '400px' }} />
-                {fieldErrors.closeDate && <div style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>{fieldErrors.closeDate}</div>}
-              </div>
-            </div>
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-              <button type="submit">Save</button>
-              <button type="button" onClick={() => {
-                setEditing(false);
-                setError(null);
-                setFieldErrors({});
-                if (deal) {
-                  setFormData({
-                    accountId: deal.accountId,
-                    name: deal.name,
-                    stage: deal.stage as typeof DEAL_STAGES[number],
-                    amount: deal.amount ? deal.amount.toString() : '',
-                    closeDate: deal.closeDate ? new Date(deal.closeDate).toISOString().split('T')[0] : '',
-                  });
-                }
-              }}>Cancel</button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
     </div>

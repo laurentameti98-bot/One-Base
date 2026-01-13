@@ -2,32 +2,50 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { Deal, PaginatedResponse } from '../types';
+import { formatDate, formatAmount } from '../utils/formatters';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
+import { usePagination } from '../hooks/usePagination';
+import { PaginationSimple } from '../components/PaginationSimple';
+import { SearchBar } from '../components/SearchBar';
+
+const DEAL_STAGES = ['lead', 'qualified', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
 
 export function DealsList() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
+  const { pagination, setPagination, updatePagination, startIndex, endIndex } = usePagination(20);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stageFilter, setStageFilter] = useState<string>('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const accountIdFilter = searchParams.get('accountId');
+  const debouncedSearchQuery = useDebouncedSearch(searchQuery, 300, () => {
+    // Reset to page 1 when search changes (only if not already page 1)
+    if (pagination.page !== 1) {
+      updatePagination({ ...pagination, page: 1 });
+    }
+  });
 
   useEffect(() => {
     loadDeals();
-  }, [pagination.page, searchQuery, accountIdFilter]);
+  }, [pagination.page, debouncedSearchQuery, stageFilter, accountIdFilter]);
 
   async function loadDeals() {
     try {
-      setLoading(true);
+      // Only set loading to true if not already loading to avoid unnecessary re-renders
+      if (!loading) {
+        setLoading(true);
+      }
       const response = await api.deals.list(
         pagination.page,
         pagination.pageSize,
-        searchQuery || undefined,
-        accountIdFilter || undefined
+        debouncedSearchQuery || undefined,
+        accountIdFilter || undefined,
+        stageFilter || undefined
       ) as PaginatedResponse<Deal>;
       setDeals(response.items);
-      setPagination(response.pagination);
+      updatePagination(response.pagination);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load deals');
@@ -36,122 +54,152 @@ export function DealsList() {
     }
   }
 
-  const startIndex = pagination.total > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0;
-  const endIndex = Math.min(pagination.page * pagination.pageSize, pagination.total);
 
-  function formatAmount(amount: number | null | undefined): string {
-    if (amount === null || amount === undefined) return '—';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+
+  function getStageBadgeClass(stage: string): string {
+    if (stage === 'closed_won') return 'badge badge-success';
+    if (stage === 'closed_lost') return 'badge';
+    return 'badge badge-primary';
   }
 
-  function formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString();
+  function formatStage(stage: string): string {
+    return stage.replace(/_/g, ' ');
   }
 
   if (loading && deals.length === 0) {
     return (
-      <div>
-        <h1>Deals</h1>
+      <div className="page-container">
+        <div className="breadcrumb">
+          <span className="breadcrumb-current">Deals</span>
+        </div>
+        <div className="page-header">
+          <div className="page-header-top">
+            <div className="page-header-title-section">
+              <h1 className="page-title">Deals</h1>
+            </div>
+          </div>
+        </div>
         <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-        <Link to="/">Home</Link>
+    <div className="page-container">
+      <div className="breadcrumb">
+        <span className="breadcrumb-current">Deals</span>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Deals</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => navigate('/deals/pipeline')}>Pipeline View</button>
-          <button onClick={() => navigate('/deals/new')}>Create Deal</button>
+      <div className="page-header">
+        <div className="page-header-top">
+          <div className="page-header-title-section">
+            <h1 className="page-title">Deals</h1>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-secondary" onClick={() => navigate('/deals/pipeline')}>Pipeline View</button>
+            <button className="btn btn-primary" onClick={() => navigate('/deals/new')}>Create Deal</button>
+          </div>
         </div>
       </div>
 
-      {error && <div style={{ color: 'red', padding: '10px', border: '1px solid red', marginBottom: '10px' }}>Error: {error}</div>}
-      
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search deals..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setPagination({ ...pagination, page: 1 });
-          }}
-        />
-      </div>
-
-      {pagination.total > 0 && (
-        <div style={{ marginBottom: '10px' }}>
-          Showing {startIndex}–{endIndex} of {pagination.total}
+      {error && (
+        <div className="error-message">
+          Error: {error}
         </div>
       )}
+
+      {accountIdFilter && (
+        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+          Filtered by Account: {accountIdFilter.substring(0, 8)}... (
+          <Link to="/deals" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          )
+        </div>
+      )}
+
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search deals..."
+      >
+        <select
+          className="form-select"
+          value={stageFilter}
+          onChange={(e) => {
+            setStageFilter(e.target.value);
+            if (pagination.page !== 1) {
+              updatePagination({ ...pagination, page: 1 });
+            }
+          }}
+          style={{ width: '200px' }}
+        >
+          <option value="">All Stages</option>
+          {DEAL_STAGES.map(stage => (
+            <option key={stage} value={stage}>{formatStage(stage)}</option>
+          ))}
+        </select>
+      </SearchBar>
 
       {deals.length === 0 && !loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', border: '1px solid #ccc' }}>
-          <p>No deals found.</p>
-          {!searchQuery && (
-            <button onClick={() => navigate('/deals/new')}>Create Deal</button>
-          )}
+        <div className="content-section">
+          <div className="section-body empty-state">
+            <p className="empty-state-text">No deals found.</p>
+            {!searchQuery && !stageFilter && !accountIdFilter && (
+              <button className="btn btn-primary" onClick={() => navigate('/deals/new')}>Create Deal</button>
+            )}
+          </div>
         </div>
       ) : deals.length > 0 ? (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Name</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Account</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Stage</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Amount</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Close Date</th>
-              <th style={{ textAlign: 'left', padding: '10px', borderBottom: '2px solid #ccc' }}>Updated At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deals.map(deal => (
-              <tr
-                key={deal.id}
-                onClick={() => navigate(`/deals/${deal.id}`)}
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f5f5'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-              >
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{deal.name}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
-                  {deal.account ? (
-                    <Link to={`/accounts/${deal.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                      {deal.account.name}
-                    </Link>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{deal.stage}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{formatAmount(deal.amount)}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{formatDate(deal.closeDate)}</td>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>{new Date(deal.updatedAt).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="content-section">
+          <div className="section-body section-body-compact">
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Account</th>
+                    <th>Stage</th>
+                    <th>Amount</th>
+                    <th>Close Date</th>
+                    <th>Updated At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deals.map(deal => (
+                    <tr
+                      key={deal.id}
+                      onClick={() => navigate(`/deals/${deal.id}`)}
+                    >
+                      <td>{deal.name}</td>
+                      <td>
+                        {deal.account ? (
+                          <Link to={`/accounts/${deal.account.id}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                            {deal.account.name}
+                          </Link>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td>
+                        <span className={getStageBadgeClass(deal.stage)}>{formatStage(deal.stage)}</span>
+                      </td>
+                      <td>{formatAmount(deal.amount)}</td>
+                      <td>{formatDate(deal.closeDate)}</td>
+                      <td>{new Date(deal.updatedAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       ) : null}
 
-      {pagination.totalPages > 1 && (
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button disabled={pagination.page === 1} onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}>Previous</button>
-          <span>Page {pagination.page} of {pagination.totalPages}</span>
-          <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}>Next</button>
-        </div>
-      )}
+      <PaginationSimple
+        pagination={pagination}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        onPageChange={(page: number) => setPagination({ ...pagination, page })}
+      />
     </div>
   );
 }
