@@ -88,7 +88,7 @@ export function AccountsList() {
         onChange={setSearchQuery}
         placeholder="Search accounts..."
       >
-        <select className="form-select" style={{ width: '200px' }}>
+        <select className="form-select select-200">
           <option>All Industries</option>
         </select>
       </SearchBar>

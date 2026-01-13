@@ -1,14 +1,23 @@
-/* Layout */
+/* layout.css — Page Structure & Layout
+   Rules:
+   - Page scaffolding: container, header, breadcrumbs, sections, grids.
+   - No button/table/badge component styling (that goes in components.css).
+*/
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
 
-/* Navigation */
+/* Optional: top nav wrapper if you have a sticky nav */
 .nav {
-  background: white;
+  background: var(--color-bg-primary);
   border-bottom: 1px solid var(--color-border-light);
   padding: var(--space-lg) var(--space-xl);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04);
 }
 
 .nav-tabs {
@@ -16,37 +25,7 @@
   gap: var(--space-sm);
   max-width: 1400px;
   margin: 0 auto;
-}
-
-.nav-tab {
-  padding: var(--space-sm) var(--space-lg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  text-decoration: none;
-}
-
-.nav-tab:hover {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
-}
-
-.nav-tab.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-/* Page Container */
-.page-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: var(--space-xl);
+  flex-wrap: wrap;
 }
 
 /* Breadcrumb */
@@ -76,7 +55,7 @@
 /* Page Header */
 .page-header {
   margin-bottom: var(--space-2xl);
-  background: white;
+  background: var(--color-bg-primary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
@@ -92,6 +71,7 @@
 
 .page-header-title-section {
   flex: 1;
+  min-width: 280px;
 }
 
 .page-title {
@@ -111,6 +91,7 @@
 .page-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-lg);
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
@@ -118,7 +99,9 @@
 
 .page-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-sm);
+  align-items: center;
 }
 
 /* Tabs */
@@ -127,10 +110,11 @@
   gap: var(--space-sm);
   margin-top: var(--space-lg);
   border-bottom: 1px solid var(--color-border-light);
+  flex-wrap: wrap;
 }
 
 .tab {
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-sm) var(--space-lg);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
@@ -150,9 +134,9 @@
   border-bottom-color: var(--color-primary);
 }
 
-/* Content Section */
+/* Content sections */
 .content-section {
-  background: white;
+  background: var(--color-bg-primary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-xl);
@@ -163,6 +147,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-lg);
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -175,20 +160,134 @@
   color: var(--color-text-tertiary);
 }
 
-.section-action {
-  font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.section-action:hover {
-  text-decoration: underline;
-}
-
 .section-body {
   padding: var(--space-xl);
 }
 
 .section-body-compact {
   padding: 0;
+}
+
+/* Field grid (Details pages) */
+.field-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 140px 1fr;
+  gap: var(--space-md) var(--space-xl);
+  padding: var(--space-lg);
+}
+
+.field-row {
+  display: contents;
+}
+
+.field-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  padding: var(--space-xs) 0;
+}
+
+.field-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  padding: var(--space-xs) 0;
+  min-height: 1.2em;
+}
+
+.field-value a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.field-value a:hover {
+  text-decoration: underline;
+}
+
+.field-value-empty {
+  color: var(--color-text-placeholder);
+}
+
+/* KPI grid (Home) */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.kpi-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+}
+
+.kpi-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.kpi-subtext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-sm);
+}
+
+.quick-actions {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Search/filter bar */
+.search-bar {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.mt-xl {
+  margin-top: var(--space-xl);
+}
+
+.select-200 {
+  width: 200px;
+}
+
+.select-150 {
+  width: 150px;
+}
+
+.page-meta--stacked {
+  margin-top: var(--space-xs);
+}
+
+/* Filter indicator */
+.filter-indicator {
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.filter-indicator a {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
 }

@@ -10,6 +10,7 @@
         --color-bg-secondary: #fafbfc;
         --color-bg-tertiary: #f5f6f8;
         --color-bg-hover: #f8f9fb;
+        --color-bg-active: #eef0f3;
         --color-border-light: #e8eaed;
         --color-border-medium: #d1d5db;
         --color-border-dark: #9ca3af;
@@ -19,6 +20,7 @@
         --color-text-placeholder: #94a3b8;
         --color-primary: #6366f1;
         --color-primary-hover: #4f46e5;
+        --color-primary-active: #4338ca;
         --color-error: #dc2626;
         --color-error-bg: #fee2e2;
         --color-error-border: #fecaca;
@@ -30,6 +32,7 @@
         --font-size-xs: 0.75rem;
         --font-size-sm: 0.8125rem;
         --font-size-base: 0.875rem;
+        --font-size-md: 0.9375rem;
         --font-size-lg: 1rem;
         --font-size-xl: 1.25rem;
         --font-size-2xl: 1.625rem;
@@ -52,6 +55,7 @@
         --radius-lg: 8px;
         --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.12);
         --transition-base: 150ms ease;
       }
@@ -62,6 +66,11 @@
         padding: 0;
       }
 
+      html,
+      body {
+        height: 100%;
+      }
+
       body {
         font-family: var(--font-family);
         font-size: var(--font-size-base);
@@ -69,6 +78,23 @@
         color: var(--color-text-primary);
         background: var(--color-bg-secondary);
         -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      :focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-focus);
       }
 
       .nav {

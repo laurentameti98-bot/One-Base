@@ -295,7 +295,7 @@ export function DealDetail() {
           <div className="content-section">
             <div className="section-header">
               <h2 className="section-title">Deal Activities</h2>
-              <select className="form-select" style={{ width: '150px' }}>
+              <select className="form-select select-150">
                 <option>All Activities</option>
                 <option>Calls</option>
                 <option>Meetings</option>

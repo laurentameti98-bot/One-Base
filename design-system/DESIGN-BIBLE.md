@@ -25,11 +25,11 @@ If something is missing → stop and extend the design system first.
 
 The following files are authoritative, in this order:
 
-1. DESIGN_BIBLE.md (this document)
-2. crm-design-system.html (reference implementation)
-3. /frontend/styles/tokens.css
-4. /frontend/styles/layout.css
-5. /frontend/styles/components.css
+1. `design-system/DESIGN-BIBLE.md` (this document)
+2. `design-system/crm-design-system.html` (reference implementation)
+3. `frontend/src/styles/tokens.css`
+4. `frontend/src/styles/layout.css`
+5. `frontend/src/styles/components.css`
 
 Rules:
 - No other visual rules exist
@@ -70,6 +70,8 @@ Token categories:
 Rules:
 - No hardcoded values outside tokens.css
 - Tokens are immutable unless explicitly changed
+Exception:
+- A small, documented set of component-specific colors may live in `frontend/src/styles/components.css` (e.g., badge variants) to mirror the reference implementation. Do not introduce new values without approval.
 
 ---
 
@@ -198,6 +200,18 @@ Used for all read-only entity details.
 
 ---
 
+## 7. Cursor / AI Instructions
+
+All AI-generated pages and components MUST use the global CSS system:
+
+- `frontend/src/styles/tokens.css`
+- `frontend/src/styles/layout.css`
+- `frontend/src/styles/components.css`
+
+Do not add inline styles or new CSS. If a required pattern is missing, stop and ask before proceeding.
+
+---
+
 ### 6.5 Timeline (Activities)
 
 Mandatory structure:
@@ -267,7 +281,7 @@ Rules:
 
 ## 9. Reference Implementation
 
-The file crm-design-system.html is the canonical visual reference.
+The file `design-system/crm-design-system.html` is the canonical visual reference.
 
 If behavior or layout is unclear:
 Compare against this file.
@@ -283,11 +297,11 @@ SYSTEM INSTRUCTIONS (MANDATORY):
 
 Before making any UI changes:
 - Read and comply with:
-  - /design-system/DESIGN_BIBLE.md
-  - crm-design-system.html
-  - styles/tokens.css
-  - styles/layout.css
-  - styles/components.css
+  - `design-system/DESIGN-BIBLE.md`
+  - `design-system/crm-design-system.html`
+  - `frontend/src/styles/tokens.css`
+  - `frontend/src/styles/layout.css`
+  - `frontend/src/styles/components.css`
 
 Rules:
 - Do NOT invent UI patterns

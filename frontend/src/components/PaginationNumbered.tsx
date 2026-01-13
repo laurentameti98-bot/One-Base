@@ -43,7 +43,7 @@ export function PaginationNumbered({ pagination, startIndex, endIndex, onPageCha
           );
         })}
         {pagination.totalPages > 5 && pagination.page < pagination.totalPages - 2 && (
-          <span style={{ padding: '0 var(--space-sm)' }}>...</span>
+          <span className="pagination-ellipsis">...</span>
         )}
         {pagination.totalPages > 5 && (
           <button

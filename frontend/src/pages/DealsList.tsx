@@ -109,9 +109,9 @@ export function DealsList() {
       )}
 
       {accountIdFilter && (
-        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+        <div className="filter-indicator">
           Filtered by Account: {accountIdFilter.substring(0, 8)}... (
-          <Link to="/deals" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          <Link to="/deals">Clear</Link>
           )
         </div>
       )}
@@ -122,7 +122,7 @@ export function DealsList() {
         placeholder="Search deals..."
       >
         <select
-          className="form-select"
+          className="form-select select-200"
           value={stageFilter}
           onChange={(e) => {
             setStageFilter(e.target.value);
@@ -130,7 +130,6 @@ export function DealsList() {
               updatePagination({ ...pagination, page: 1 });
             }
           }}
-          style={{ width: '200px' }}
         >
           <option value="">All Stages</option>
           {DEAL_STAGES.map(stage => (

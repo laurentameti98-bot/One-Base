@@ -106,11 +106,11 @@ export function ActivitiesList() {
       )}
 
       {activeFilter && (
-        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+        <div className="filter-indicator">
           Filtered by: {accountIdFilter && `Account: ${accountIdFilter.substring(0, 8)}...`}
           {contactIdFilter && `Contact: ${contactIdFilter.substring(0, 8)}...`}
           {dealIdFilter && `Deal: ${dealIdFilter.substring(0, 8)}...`}
-          {' '}(<Link to="/activities" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>)
+          {' '}(<Link to="/activities">Clear</Link>)
         </div>
       )}
 
@@ -120,7 +120,7 @@ export function ActivitiesList() {
         placeholder="Search activities..."
       >
         <select
-          className="form-select"
+          className="form-select select-200"
           value={typeFilter}
           onChange={(e) => {
             setTypeFilter(e.target.value);
@@ -128,7 +128,6 @@ export function ActivitiesList() {
               updatePagination({ ...pagination, page: 1 });
             }
           }}
-          style={{ width: '200px' }}
         >
           <option value="">All Activities</option>
           {ACTIVITY_TYPES.map(type => (

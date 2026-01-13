@@ -79,9 +79,9 @@ export function ContactsList() {
       )}
 
       {accountIdFilter && (
-        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+        <div className="filter-indicator">
           Filtered by Account: {accountIdFilter.substring(0, 8)}... (
-          <Link to="/contacts" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          <Link to="/contacts">Clear</Link>
           )
         </div>
       )}
@@ -91,7 +91,7 @@ export function ContactsList() {
         onChange={setSearchQuery}
         placeholder="Search contacts..."
       >
-        <select className="form-select" style={{ width: '200px' }}>
+        <select className="form-select select-200">
           <option>All Accounts</option>
         </select>
       </SearchBar>
@@ -99,7 +99,7 @@ export function ContactsList() {
       <div className="content-section">
         <div className="section-body section-body-compact">
           {loading && contacts.length === 0 ? (
-            <div style={{ padding: 'var(--space-lg)', textAlign: 'center' }}>Loading...</div>
+            <div className="empty-state text-center">Loading...</div>
           ) : (
             <>
               <div className="table-container">
@@ -117,7 +117,7 @@ export function ContactsList() {
                   <tbody>
                     {contacts.length === 0 && !loading ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: 'var(--space-lg)' }}>
+                        <td colSpan={6} className="text-center" style={{ padding: 'var(--space-lg)' }}>
                           <div className="empty-state">
                             <p className="empty-state-text">No contacts found.</p>
                             {!searchQuery && !accountIdFilter && (

@@ -120,9 +120,9 @@ export function DealsPipeline() {
       )}
 
       {accountIdFilter && (
-        <div style={{ marginBottom: '10px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+        <div className="filter-indicator">
           Filtered by Account: {accountIdFilter.substring(0, 8)}... (
-          <Link to="/deals/pipeline" style={{ color: 'var(--color-text-secondary)', textDecoration: 'underline' }}>Clear</Link>
+          <Link to="/deals/pipeline">Clear</Link>
           )
         </div>
       )}

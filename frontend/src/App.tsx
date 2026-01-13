@@ -13,6 +13,8 @@ import { DealsPipeline } from './pages/DealsPipeline';
 import { ActivitiesList } from './pages/ActivitiesList';
 import { ActivityDetail } from './pages/ActivityDetail';
 import { ActivityCreate } from './pages/ActivityCreate';
+import { Admin } from './pages/Admin';
+import { AdminDesign } from './pages/AdminDesign';
 
 function App() {
   const location = useLocation();
@@ -25,6 +27,9 @@ function App() {
     <div>
       <nav className="nav">
         <div className="nav-tabs">
+          <Link to="/" className={`nav-tab ${location.pathname === '/' ? 'active' : ''}`}>
+            Home
+          </Link>
           <Link to="/accounts" className={`nav-tab ${isActive('/accounts') ? 'active' : ''}`}>
             Accounts
           </Link>
@@ -36,6 +41,9 @@ function App() {
           </Link>
           <Link to="/activities" className={`nav-tab ${isActive('/activities') ? 'active' : ''}`}>
             Activities
+          </Link>
+          <Link to="/admin" className={`nav-tab ${isActive('/admin') ? 'active' : ''}`}>
+            Admin
           </Link>
         </div>
       </nav>
@@ -54,6 +62,8 @@ function App() {
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/activities/new" element={<ActivityCreate />} />
         <Route path="/activities/:id" element={<ActivityDetail />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/design" element={<AdminDesign />} />
       </Routes>
     </div>
   );
